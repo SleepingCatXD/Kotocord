@@ -13,6 +13,7 @@ CMakeCache.txt
 CMakeFiles/
 CMakeSettings.json
 launch.vs.json
+.editorconfig
 
 # ==========================================
 # Qt 自动化生成的中间文件

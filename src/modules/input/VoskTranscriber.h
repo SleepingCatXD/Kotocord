@@ -1,1 +1,1 @@
-//¼Ì³Ð×Ô IAudioTranscriber
+ï»¿//ç»§æ‰¿è‡ª IAudioTranscriber

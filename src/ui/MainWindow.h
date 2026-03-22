@@ -1,8 +1,8 @@
-#ifndef MAINWINDOW_H
+ï»¿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "TransparentWidget.h" // ÒıÈëÍ·ÎÄ¼ş
+#include "TransparentWidget.h" // å¼•å…¥å¤´æ–‡ä»¶
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -20,6 +20,6 @@ public:
 
 private:
     Ui::MainWindow* ui;
-    TransparentWidget* m_overlayWidget; // Ìí¼ÓÍ¸Ã÷´°¿ÚÖ¸Õë
+    TransparentWidget* m_overlayWidget; // æ·»åŠ é€æ˜çª—å£æŒ‡é’ˆ
 };
 #endif // MAINWINDOW_H

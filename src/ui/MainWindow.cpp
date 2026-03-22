@@ -5,41 +5,49 @@
 #include <QLineEdit>
 #include <QPushButton>
 
+#include "../core/AppController.h"
+#include "../modules/llm/MockLLMWorker.h"
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setWindowTitle("Kotocord - controller");
+    this->setWindowTitle("Kotocord - Controller");
 
-    // 实例化透明窗口并独立显示 (不传入 parent，使其成为顶级窗口)
+    // 1. 实例化透明窗口
     m_overlayWidget = new TransparentWidget(nullptr);
-    // 添加这一行：当所有其他主窗口关闭时，不要因为这个窗口而阻止程序退出
     m_overlayWidget->setAttribute(Qt::WA_QuitOnClose, false);
     m_overlayWidget->show();
 
-    // 2. 在主窗口动态创建 UI (输入框和按钮)
+    // 2. 实例化控制器和虚拟大模型 (传入 this 作为 parent，由 Qt 自动管理内存)
+    m_appController = new AppController(this);
+    m_mockLLM = new MockLLMWorker(this);
+
+    // 3. 依赖注入：告诉控制器使用哪个大模型和哪个渲染窗口
+    m_appController->setLanguageModel(m_mockLLM);
+    m_appController->setRenderWidget(m_overlayWidget);
+
+    // 4. 搭建测试 UI
     QVBoxLayout* layout = new QVBoxLayout(ui->centralwidget);
-
     QLineEdit* inputBox = new QLineEdit(this);
-    inputBox->setPlaceholderText("Type your message here..."); // 提示文本
-
-    QPushButton* sendBtn = new QPushButton("Send to Screen", this);
+    inputBox->setPlaceholderText("input text, test LLM...");
+    QPushButton* sendBtn = new QPushButton("send to AppController", this);
 
     layout->addWidget(inputBox);
     layout->addWidget(sendBtn);
-    layout->addStretch(); // 把控件往上顶
+    layout->addStretch();
 
-    // 3. 核心魔法：连接按钮的点击事件，到透明窗口的渲染功能
+    // 5. 核心改变：以前是直接发给透明窗口，现在发给中枢神经 AppController
     connect(sendBtn, &QPushButton::clicked, this, [=]() {
         QString text = inputBox->text();
         if (!text.isEmpty()) {
-            m_overlayWidget->setText(text); // 把字传给透明窗口
-            inputBox->clear();              // 清空输入框
+            m_appController->onManualTextEntered(text); // 送入控制器！
+            inputBox->clear();
         }
         });
 
-    // 选做：按回车键也能发送
+    // 按回车键也能发送
     connect(inputBox, &QLineEdit::returnPressed, sendBtn, &QPushButton::click);
 }
 
@@ -47,4 +55,5 @@ MainWindow::~MainWindow()
 {
     delete m_overlayWidget; // 记得释放内存
     delete ui;
+    // 注: m_appController 和 m_mockLLM 因为挂载在 this 上，会自动释放，无需手动 delete
 }

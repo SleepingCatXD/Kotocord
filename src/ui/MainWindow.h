@@ -4,6 +4,10 @@
 #include <QMainWindow>
 #include "TransparentWidget.h" // 引入头文件
 
+// 引入前向声明或直接 include
+class AppController;
+class MockLLMWorker;
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
     class MainWindow;
@@ -21,5 +25,9 @@ public:
 private:
     Ui::MainWindow* ui;
     TransparentWidget* m_overlayWidget; // 添加透明窗口指针
+
+    //新增：核心控制器和虚拟大模型
+    AppController* m_appController;
+    MockLLMWorker* m_mockLLM;
 };
 #endif // MAINWINDOW_H

@@ -12,7 +12,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON) 
 set(CMAKE_AUTORCC ON) 
 
-find_package(Qt6 COMPONENTS Widgets REQUIRED)
+# 注意：这里新增了 Multimedia 模块！
+# 如果 CMake 报错找不到 Multimedia，请运行 Qt Maintenance Tool 勾选安装 "Qt Multimedia" 组件。
+find_package(Qt6 COMPONENTS Widgets Multimedia REQUIRED)
 
 # 更新：添加了 TransparentWidget
 set(UI_SOURCES
@@ -23,14 +25,36 @@ set(UI_SOURCES
     src/ui/TransparentWidget.h
 )
 
+# 2. 核心架构源码
 set(CORE_SOURCES
     src/main.cpp
+    src/core/AppController.cpp
+    src/core/AppController.h
+    src/core/DataTypes.h
 )
+
+# 3. 模块源码 (注意：我为你预留了 AudioCapture.cpp 的位置，你需要创建它)
+set(MODULE_SOURCES
+    src/modules/input/IAudioTranscriber.h
+    src/modules/input/VoskTranscriber.h
+    src/modules/input/WhisperTranscriber.h
+    src/modules/input/AudioCapture.h
+    src/modules/input/AudioCapture.cpp 
+    src/modules/llm/ILanguageModel.h
+    src/modules/llm/OpenAILLMWorker.h
+)
+
+# 4. 资源文件
+#set(RESOURCE_FILES
+#    resources/resources.qrc
+#)
 
 add_executable(${PROJECT_NAME} 
     ${CORE_SOURCES} 
     ${UI_SOURCES} 
+    ${MODULE_SOURCES}
     ${RESOURCE_FILES}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)
+# 链接 Widgets 和 Multimedia 库
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Multimedia)

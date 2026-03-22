@@ -1,0 +1,1 @@
+// ASR 纯虚类接口(定义 start(), stop(), 信号 textReady)

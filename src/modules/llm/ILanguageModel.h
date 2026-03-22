@@ -1,0 +1,1 @@
+//LLM 纯虚类接口 (定义 processText(QString))

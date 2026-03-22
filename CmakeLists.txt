@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.16)
+project(Kotocord VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+set(CMAKE_AUTOMOC ON) 
+set(CMAKE_AUTOUIC ON) 
+set(CMAKE_AUTORCC ON) 
+
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
+
+# 更新：添加了 TransparentWidget
+set(UI_SOURCES
+    src/ui/MainWindow.cpp
+    src/ui/MainWindow.h
+    src/ui/MainWindow.ui
+    src/ui/TransparentWidget.cpp
+    src/ui/TransparentWidget.h
+)
+
+set(CORE_SOURCES
+    src/main.cpp
+)
+
+add_executable(${PROJECT_NAME} 
+    ${CORE_SOURCES} 
+    ${UI_SOURCES} 
+    ${RESOURCE_FILES}
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets)

@@ -1,17 +1,10 @@
-# ==========================================
-# C++ & Visual Studio 编译生成目录
-# ==========================================
-out/
-bin/
-build/
+# === C++ / Visual Studio / CMake 临时文件 ===
 .vs/
-*.user
-*.suo
-*.sln
-*.vcxproj*
-CMakeCache.txt
-CMakeFiles/
+out/
+build/
+bin/
 CMakeSettings.json
+*.user
 launch.vs.json
 .editorconfig
 
@@ -29,3 +22,15 @@ qrc_*.cpp
 # ==========================================
 Thumbs.db
 .DS_Store
+
+# === 第三方库的体积巨大文件 (非常重要) ===
+# 只上传 third_party 里的头文件(.h)，不上传库文件，让用户自己去下载
+third_party/**/*.dll
+third_party/**/*.lib
+third_party/**/*.a
+third_party/**/*.so
+
+# === 语音模型文件 (绝对不能上传) ===
+resources/model/
+*.wav
+*.mp3

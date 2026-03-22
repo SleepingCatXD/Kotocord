@@ -1,4 +1,4 @@
-﻿#include "MainWindow.h"
+#include "MainWindow.h"
 #include "ui_MainWindow.h"
 
 #include <QVBoxLayout>
@@ -8,9 +8,15 @@
 #include "../core/AppController.h"
 #include "../modules/llm/MockLLMWorker.h"
 
+#include "../modules/input/VoskTranscriber.h"
+#include "../modules/input/AudioFileSimulator.h"
+
 #include <QScreen>
 #include <QGuiApplication>
 #include <QRect>
+
+#include <QCoreApplication>
+#include <QDir>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -67,6 +73,51 @@ MainWindow::MainWindow(QWidget* parent)
             // m_currentASR->stop();
         }
         });
+
+    // 1. 实例化 ASR 引擎和音频模拟器
+    VoskTranscriber* voskEngine = new VoskTranscriber(this);
+    AudioFileSimulator* audioSim = new AudioFileSimulator(this);
+
+    // 2. 连接数据流：音频滴管 -> Vosk -> AppController
+    connect(audioSim, &AudioFileSimulator::errorOccurred, this, [](const QString& msg) {
+        qDebug() << "[错误]" << msg;
+        });
+    connect(voskEngine, &IAudioTranscriber::errorOccurred, this, [](const QString& msg) {
+        qDebug() << "[错误]" << msg;
+        });
+
+    // 强行检查连接是否成功，并打印它们在内存里的身份证号（地址）
+    bool isConnected = connect(audioSim,&AudioFileSimulator::audioDataReady,voskEngine,&VoskTranscriber::onAudioDataReady);
+
+    qDebug() << "================ 测谎仪 ================";
+    qDebug() << "AudioSim 地址:" << audioSim;
+    qDebug() << "VoskEngine 地址:" << voskEngine;
+    qDebug() << "信号槽是否接通? :" << (isConnected ? "✅ 是的!" : "❌ 失败!");
+    qDebug() << "========================================";
+
+    // 补上这根丢失的神经！把 Vosk 的文字发送给中枢神经控制器
+    connect(voskEngine,&IAudioTranscriber::textReady,m_appController,&AppController::onASRTextReady);
+
+    // 3. 在 UI 的“启用麦克风”选框上绑定启动逻辑 (偷天换日，其实启动的是文件模拟器)
+    connect(ui->chkEnableASR, &QCheckBox::toggled, this, [=](bool checked) {
+        if (checked) {
+            if (voskEngine->start()) {
+                // 动态计算 test_audio.wav 的绝对路径
+                QString exeDir = QCoreApplication::applicationDirPath();
+                QString rawPath = QDir(exeDir).filePath("../resources/test_audio.wav");
+                //消除路径里的 "../"，让它变成纯粹的绝对路径
+                QString audioPath = QDir::cleanPath(rawPath);
+
+                qDebug() << "[UI] 尝试读取测试音频:" << audioPath;
+                audioSim->start(audioPath);
+            }
+        }
+        else {
+            audioSim->stop();
+            voskEngine->stop();
+            qDebug() << "[UI] ASR 引擎与音频模拟已手动关闭。";
+        }
+    });
 }
 
 MainWindow::~MainWindow()

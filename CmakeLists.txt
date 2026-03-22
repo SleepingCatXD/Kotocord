@@ -37,6 +37,7 @@ set(CORE_SOURCES
 set(MODULE_SOURCES
     src/modules/input/IAudioTranscriber.h
     src/modules/input/VoskTranscriber.h
+    src/modules/input/VoskTranscriber.cpp
     src/modules/input/WhisperTranscriber.h
     src/modules/input/AudioCapture.h
     src/modules/input/AudioCapture.cpp 
@@ -44,6 +45,8 @@ set(MODULE_SOURCES
     #src/modules/llm/OpenAILLMWorker.h
     src/modules/llm/MockLLMWorker.h
     src/modules/llm/MockLLMWorker.cpp
+    src/modules/input/AudioFileSimulator.h
+    src/modules/input/AudioFileSimulator.cpp
 )
 
 # 4. 资源文件
@@ -56,7 +59,27 @@ add_executable(${PROJECT_NAME}
     ${UI_SOURCES} 
     ${MODULE_SOURCES}
     ${RESOURCE_FILES}
- "src/modules/llm/MockLLMWorker.cpp")
+)
 
-# 链接 Widgets 和 Multimedia 库
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Multimedia)
+# 设置 vosk 根目录变量，方便后续引用
+set(VOSK_DIR "${CMAKE_SOURCE_DIR}/third_party/vosk")
+
+# 告诉项目去哪里找 vosk_api.h
+target_include_directories(${PROJECT_NAME} PRIVATE ${VOSK_DIR}/include)
+
+# 链接 Widgets, Multimedia 以及 Vosk 的静态导入库
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    Qt6::Widgets 
+    Qt6::Multimedia 
+    ${VOSK_DIR}/lib/libvosk.lib  # 链接 vosk 的 lib 文件
+)
+
+# 1. 查找 third_party/vosk/lib 下所有的 .dll 文件
+file(GLOB VOSK_DLLS "${VOSK_DIR}/lib/*.dll")
+
+# 2. 将它们全部拷贝到编译输出目录 (bin)
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${VOSK_DLLS}
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>
+)

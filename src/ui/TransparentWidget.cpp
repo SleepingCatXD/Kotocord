@@ -27,6 +27,8 @@ void TransparentWidget::paintEvent(QPaintEvent* event) {
     if (m_currentText.isEmpty()) return;
 
     QPainter painter(this);
+    //用 rgba(0,0,0,0) 擦除整个窗口
+    painter.fillRect(rect(), Qt::transparent);
     // 开启抗锯齿，保证边缘平滑
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);

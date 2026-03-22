@@ -1,31 +1,117 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>800</width>
-    <height>600</height>
-   </rect>
-  </property>
-  <property name="windowTitle">
-   <string>MainWindow</string>
-  </property>
-  <widget class="QWidget" name="centralwidget"/>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>21</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
- </widget>
- <resources/>
- <connections/>
+	<class>MainWindow</class>
+	<widget class="QMainWindow" name="MainWindow">
+		<property name="geometry">
+			<rect>
+				<x>0</x>
+				<y>0</y>
+				<width>450</width>
+				<height>350</height>
+			</rect>
+		</property>
+		<property name="windowTitle">
+			<string>Kotocord 控制台</string>
+		</property>
+		<widget class="QWidget" name="centralwidget">
+			<layout class="QVBoxLayout" name="verticalLayout">
+				<item>
+					<widget class="QGroupBox" name="groupBoxInput">
+						<property name="title">
+							<string>手动字幕输入</string>
+						</property>
+						<layout class="QHBoxLayout" name="horizontalLayout">
+							<item>
+								<widget class="QLineEdit" name="inputBox">
+									<property name="placeholderText">
+										<string>在此输入文字，按回车发送...</string>
+									</property>
+								</widget>
+							</item>
+							<item>
+								<widget class="QPushButton" name="btnSend">
+									<property name="text">
+										<string>发送 (Send)</string>
+									</property>
+								</widget>
+							</item>
+						</layout>
+					</widget>
+				</item>
+				<item>
+					<widget class="QGroupBox" name="groupBoxLLM">
+						<property name="title">
+							<string>AI 大模型设置</string>
+						</property>
+						<layout class="QVBoxLayout" name="verticalLayout_2">
+							<item>
+								<widget class="QCheckBox" name="chkEnableLLM">
+									<property name="text">
+										<string>启用大模型情绪分析与文本润色 (LLM)</string>
+									</property>
+									<property name="checked">
+										<bool>true</bool>
+									</property>
+								</widget>
+							</item>
+						</layout>
+					</widget>
+				</item>
+				<item>
+					<widget class="QGroupBox" name="groupBoxASR">
+						<property name="title">
+							<string>语音识别设置 (ASR)</string>
+						</property>
+						<layout class="QVBoxLayout" name="verticalLayout_3">
+							<item>
+								<widget class="QCheckBox" name="chkEnableASR">
+									<property name="text">
+										<string>启用麦克风语音识别</string>
+									</property>
+								</widget>
+							</item>
+							<item>
+								<widget class="QRadioButton" name="radioVosk">
+									<property name="text">
+										<string>使用 Vosk (低延迟，适合游戏双开)</string>
+									</property>
+									<property name="checked">
+										<bool>true</bool>
+									</property>
+									<property name="enabled">
+										<bool>false</bool>
+									</property>
+								</widget>
+							</item>
+							<item>
+								<widget class="QRadioButton" name="radioWhisper">
+									<property name="text">
+										<string>使用 Whisper.cpp (高精度，吃性能)</string>
+									</property>
+									<property name="enabled">
+										<bool>false</bool>
+									</property>
+								</widget>
+							</item>
+						</layout>
+					</widget>
+				</item>
+				<item>
+					<spacer name="verticalSpacer">
+						<property name="orientation">
+							<enum>Qt::Vertical</enum>
+						</property>
+						<property name="sizeHint" stdset="0">
+							<size>
+								<width>20</width>
+								<height>40</height>
+							</size>
+						</property>
+					</spacer>
+				</item>
+			</layout>
+		</widget>
+	</widget>
+	<resources/>
+	<connections/>
 </ui>

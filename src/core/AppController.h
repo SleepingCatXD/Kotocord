@@ -7,6 +7,7 @@
 #include "DataTypes.h"
 #include "../modules/llm/ILanguageModel.h"
 #include "../ui/TransparentWidget.h"
+#include "../modules/input/IAudioTranscriber.h"
 
 class AppController : public QObject {
     Q_OBJECT
@@ -17,9 +18,11 @@ public:
     void setLanguageModel(ILanguageModel* llm);
     void setRenderWidget(TransparentWidget* renderWidget);
 
+    void setLLMEnabled(bool enabled);
 public slots:
     // 接收来自 MainWindow 的手动文本输入
     void onManualTextEntered(const QString& text);
+    void onASRTextReady(const QString& text, bool isFinal);
 
 private slots:
     // 接收来自 LLM 的处理结果
@@ -28,6 +31,7 @@ private slots:
 private:
     ILanguageModel* m_llm;
     TransparentWidget* m_renderWidget;
+    bool m_llmEnabled; // 记录 LLM 开关状态
 };
 
 #endif // APPCONTROLLER_H

@@ -1,4 +1,4 @@
-#include "SubtitleRenderer.h"
+﻿#include "SubtitleRenderer.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QMouseEvent>
@@ -14,7 +14,7 @@ SubtileRenderer::SubtileRenderer(QWidget* parent)
     setAttribute(Qt::WA_TranslucentBackground);
 
     // 设置一个比较宽的初始大小，适合放字幕
-    resize(800, 200);
+    resize(1000, 200);
 }
 
 void SubtileRenderer::setText(const QString& text) {

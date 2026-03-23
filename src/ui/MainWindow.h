@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "TransparentWidget.h" // 引入头文件
+#include "../modules/render/SubtitleRenderer.h"
 
 // 引入前向声明或直接 include
 class AppController;
@@ -24,7 +24,7 @@ public:
 
 private:
     Ui::MainWindow* ui;
-    TransparentWidget* m_overlayWidget; // 添加透明窗口指针
+    SubtileRenderer* m_overlayWidget; // 添加透明窗口指针
 
     //新增：核心控制器和虚拟大模型
     AppController* m_appController;

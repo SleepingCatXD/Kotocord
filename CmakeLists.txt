@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
@@ -16,13 +20,11 @@ set(CMAKE_AUTORCC ON)
 # 如果 CMake 报错找不到 Multimedia，请运行 Qt Maintenance Tool 勾选安装 "Qt Multimedia" 组件。
 find_package(Qt6 COMPONENTS Widgets Multimedia REQUIRED)
 
-# 更新：添加了 TransparentWidget
+# 更新：移除了 TransparentWidget
 set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.ui
-    src/ui/TransparentWidget.cpp
-    src/ui/TransparentWidget.h
 )
 
 # 2. 核心架构源码
@@ -36,17 +38,27 @@ set(CORE_SOURCES
 # 3. 模块源码 (注意：我为你预留了 AudioCapture.cpp 的位置，你需要创建它)
 set(MODULE_SOURCES
     src/modules/input/IAudioTranscriber.h
+
     src/modules/input/VoskTranscriber.h
     src/modules/input/VoskTranscriber.cpp
+
     src/modules/input/WhisperTranscriber.h
+
     src/modules/input/AudioCapture.h
     src/modules/input/AudioCapture.cpp 
+
     src/modules/llm/ILanguageModel.h
+
     #src/modules/llm/OpenAILLMWorker.h
+
     src/modules/llm/MockLLMWorker.h
     src/modules/llm/MockLLMWorker.cpp
+
     src/modules/input/AudioFileSimulator.h
     src/modules/input/AudioFileSimulator.cpp
+
+    src/modules/render/SubtitleRenderer.h
+    src/modules/render/SubtitleRenderer.cpp
 )
 
 # 4. 资源文件

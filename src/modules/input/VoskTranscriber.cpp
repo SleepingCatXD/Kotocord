@@ -85,6 +85,23 @@ void VoskTranscriber::onAudioDataReady(const QByteArray& data) {
     }
 }
 
+void VoskTranscriber::onAudioStreamFinished() {
+    if(!m_isRunning || !m_recognizer) return;
+
+    qDebug() << "[Vosk] 收到音频流结束信号，强制结算剩余缓冲...";
+
+    // 核心机制：调用 final_result 强制清空 Vosk 内部的残余音频
+    const char* final_result = vosk_recognizer_final_result(m_recognizer);
+
+    qDebug() << "[Vosk - 强制最终结果] 原始 JSON:" << final_result;
+
+    // 把最后这句话当作最终结果 (isFinal = true) 发送出去
+    parseAndEmitResult(final_result,true);
+
+    // 结算完成后，如果你希望引擎重置状态迎接下一段语音，可以调用：
+    // vosk_recognizer_reset(m_recognizer); 
+}
+
 void VoskTranscriber::parseAndEmitResult(const char* jsonStr, bool isFinal) {
     // 将 C 字符串转换为 Qt 的 JSON 对象
     QJsonDocument doc = QJsonDocument::fromJson(QByteArray(jsonStr));

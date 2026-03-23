@@ -6,7 +6,7 @@
 #include <QObject>
 #include "DataTypes.h"
 #include "../modules/llm/ILanguageModel.h"
-#include "../ui/TransparentWidget.h"
+#include "../modules/render/SubtitleRenderer.h"
 #include "../modules/input/IAudioTranscriber.h"
 
 class AppController : public QObject {
@@ -16,7 +16,7 @@ public:
 
     // 依赖注入：告诉控制器使用哪个 LLM 和渲染窗口
     void setLanguageModel(ILanguageModel* llm);
-    void setRenderWidget(TransparentWidget* renderWidget);
+    void setRenderWidget(SubtileRenderer* renderWidget);
 
     void setLLMEnabled(bool enabled);
 public slots:
@@ -30,7 +30,7 @@ private slots:
 
 private:
     ILanguageModel* m_llm;
-    TransparentWidget* m_renderWidget;
+    SubtileRenderer* m_renderWidget;
     bool m_llmEnabled; // 记录 LLM 开关状态
 };
 

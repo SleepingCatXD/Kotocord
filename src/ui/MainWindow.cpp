@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget* parent)
     // 这里会自动加载你在 XML 里画的所有 UI 控件！
     ui->setupUi(this);
 
-    m_overlayWidget = new TransparentWidget(nullptr);
+    m_overlayWidget = new SubtileRenderer(nullptr);
     m_overlayWidget->setAttribute(Qt::WA_QuitOnClose, false);
 
     //新增：计算屏幕中心靠下的位置
@@ -95,6 +95,9 @@ MainWindow::MainWindow(QWidget* parent)
     qDebug() << "信号槽是否接通? :" << (isConnected ? "✅ 是的!" : "❌ 失败!");
     qDebug() << "========================================";
 
+    //新增这根极其关键的线：点滴打完了，通知 Vosk 强制结算！
+    connect(audioSim,&AudioFileSimulator::finished,voskEngine,&VoskTranscriber::onAudioStreamFinished);
+
     // 补上这根丢失的神经！把 Vosk 的文字发送给中枢神经控制器
     connect(voskEngine,&IAudioTranscriber::textReady,m_appController,&AppController::onASRTextReady);
 
@@ -113,6 +116,9 @@ MainWindow::MainWindow(QWidget* parent)
             }
         }
         else {
+            // 修改这里：在停止引擎之前，先手动触发一次强制结算
+            voskEngine->onAudioStreamFinished();
+
             audioSim->stop();
             voskEngine->stop();
             qDebug() << "[UI] ASR 引擎与音频模拟已手动关闭。";

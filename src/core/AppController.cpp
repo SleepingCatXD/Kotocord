@@ -14,7 +14,7 @@ void AppController::setLanguageModel(ILanguageModel* llm) {
     }
 }
 
-void AppController::setRenderWidget(TransparentWidget* renderWidget) {
+void AppController::setRenderWidget(SubtileRenderer* renderWidget) {
     m_renderWidget = renderWidget;
 }
 

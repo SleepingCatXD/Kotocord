@@ -54,19 +54,6 @@ MainWindow::MainWindow(QWidget* parent)
     // 告诉 Qt 的事件循环，认识我们自定义的结构体
     qRegisterMetaType<SubtitleFrame>("SubtitleFrame");
 
-    // 新增：初始化系统注册表/AppData配置中心
-    // 参数含义：公司组织名, 软件名
-    QSettings settings("MyStudio", "Kotocord");
-
-    // 从本地读取加密的 Key 并解密
-    QString savedEncryptedKey = settings.value("API/DeepSeekKey", "").toString();
-    QString plainKey = deobfuscateKey(savedEncryptedKey);
-
-    // 如果本地有 Key，自动填入密码框
-    if (!plainKey.isEmpty()) {
-        ui->inputApiKey->setText(plainKey);
-        qDebug() << "[System] 成功从本地加载 API Key！";
-    }
     m_overlayWidget = new SubtileRenderer(nullptr);
     m_overlayWidget->setAttribute(Qt::WA_QuitOnClose, false);
 
@@ -216,6 +203,22 @@ MainWindow::MainWindow(QWidget* parent)
 
     // 补上这极其关键的一行！把兵工厂的钥匙交给指挥官
     m_appController->setKaomojiManager(kaomojiManager);
+    // 把加载配置的代码移到这里：所有信号槽连接完毕后，再触发 setText！
+    QSettings settings("MyStudio", "Kotocord");
+    QString savedEncryptedKey = settings.value("API/DeepSeekKey", "").toString();
+    QString plainKey = deobfuscateKey(savedEncryptedKey);
+
+    if (!plainKey.isEmpty()) {
+        ui->inputApiKey->setText(plainKey); // 这一步现在会完美触发 textChanged 信号，传给 DeepSeek
+        qDebug() << "[System] 成功从本地加载 API Key 并同步至大脑！";
+        // 增加 UI 提示：证明我们连上了
+        ui->lblCurrentEmotion->setText("已就绪，等待输入...");
+        ui->lblCurrentEmotion->setStyleSheet("color: #28A745;"); // 变成健康的绿色
+    }
+    else {
+        ui->lblCurrentEmotion->setText("未配置 API Key");
+        ui->lblCurrentEmotion->setStyleSheet("color: #DC3545;"); // 红色警告
+    }
 }
 
 MainWindow::~MainWindow()

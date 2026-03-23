@@ -47,7 +47,8 @@ void AppController::onManualTextEntered(const QString& text) {
 
 void AppController::onASRTextReady(const QString& text, bool isFinal) {
     if (text.isEmpty()) return;
-
+    // 新增强力监控：看看到底有没有 isFinal = true 传过来！
+    qDebug() << "[AppController - ASR入口] 收到文本:" << text << "| 是否完结(isFinal):" << isFinal;
     // 这里的逻辑和手动输入类似，只不过我们需要判断 isFinal。
     // 如果还没说完 (isFinal == false)，就不送给 LLM，直接半透明渲染在屏幕上。
     SubtitleFrame frame;

@@ -1,9 +1,10 @@
 ﻿// 核心枢纽：串联输入、LLM、渲染和 OSC
 #include "AppController.h"
+#include "../modules/llm/KaomojiManager.h"
 #include <QDebug>
 
 AppController::AppController(QObject* parent)
-    : QObject(parent), m_llm(nullptr), m_renderWidget(nullptr), m_llmEnabled(true) {
+    : QObject(parent), m_llm(nullptr), m_renderWidget(nullptr), m_llmEnabled(true),m_kaomojiManager (nullptr){
 }
 
 void AppController::setLanguageModel(ILanguageModel* llm) {
@@ -65,11 +66,33 @@ void AppController::onASRTextReady(const QString& text, bool isFinal) {
 }
 
 void AppController::onLLMTextProcessed(const SubtitleFrame& frame) {
-    qDebug() << "[AppController] 准备渲染最终文本:" << frame.displayText;
+    SubtitleFrame finalFrame = frame;
+
+    // 如果大模型成功分析出了情绪，且非平静，就去仓库提货！
+    if (finalFrame.emotion != EmotionType::Neutral && m_kaomojiManager) {
+        QString kaomoji = m_kaomojiManager->getKaomoji(finalFrame.emotion);
+        if (!kaomoji.isEmpty()) {
+            finalFrame.displayText = finalFrame.rawText + " " + kaomoji;
+        }
+        else {
+            finalFrame.displayText = finalFrame.rawText;
+        }
+    }
+    else {
+        finalFrame.displayText = finalFrame.rawText;
+    }
+
+    //注意这里：把 frame 改成 finalFrame！
+    qDebug() << "[AppController] 准备渲染最终文本:" << finalFrame.displayText;
 
     if (m_renderWidget) {
-        m_renderWidget->setText(frame.displayText);
+        m_renderWidget->setText(finalFrame.displayText); // 这里也要改！
     }
 
     // 未来这里还要加上：if (m_oscClient) { m_oscClient->sendEmotion(frame.emotion); }
+}
+
+// 新增 Setter 的实现
+void AppController::setKaomojiManager(KaomojiManager* manager) {
+    m_kaomojiManager = manager;
 }

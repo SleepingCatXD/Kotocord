@@ -47,7 +47,12 @@ set(MODULE_SOURCES
     src/modules/input/AudioCapture.h
     src/modules/input/AudioCapture.cpp 
 
+    src/modules/llm/KaomojiManager.h
+    src/modules/llm/KaomojiManager.cpp
+
     src/modules/llm/ILanguageModel.h
+    src/modules/llm/DeepSeekAPIWorker.h
+    src/modules/llm/DeepSeekAPIWorker.cpp
 
     #src/modules/llm/OpenAILLMWorker.h
 

@@ -8,6 +8,10 @@
 #include "../modules/llm/ILanguageModel.h"
 #include "../modules/render/SubtitleRenderer.h"
 #include "../modules/input/IAudioTranscriber.h"
+#include "../modules/llm/KaomojiManager.h"
+
+// 在顶部前向声明
+class KaomojiManager;
 
 class AppController : public QObject {
     Q_OBJECT
@@ -19,6 +23,9 @@ public:
     void setRenderWidget(SubtileRenderer* renderWidget);
 
     void setLLMEnabled(bool enabled);
+    // 新增：注入颜文字管理器的接口
+    void setKaomojiManager(KaomojiManager* manager);
+
 public slots:
     // 接收来自 MainWindow 的手动文本输入
     void onManualTextEntered(const QString& text);
@@ -32,6 +39,7 @@ private:
     ILanguageModel* m_llm;
     SubtileRenderer* m_renderWidget;
     bool m_llmEnabled; // 记录 LLM 开关状态
+    KaomojiManager* m_kaomojiManager;
 };
 
 #endif // APPCONTROLLER_H

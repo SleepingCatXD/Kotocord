@@ -7,6 +7,7 @@
 // 引入前向声明或直接 include
 class AppController;
 class MockLLMWorker;
+class DeepSeekAPIWorker;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -29,5 +30,6 @@ private:
     //新增：核心控制器和虚拟大模型
     AppController* m_appController;
     MockLLMWorker* m_mockLLM;
+    DeepSeekAPIWorker* m_deepSeekLLM;
 };
 #endif // MAINWINDOW_H

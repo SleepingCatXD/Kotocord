@@ -11,14 +11,16 @@ public:
     explicit ILanguageModel(QObject* parent = nullptr) : QObject(parent) {}
     virtual ~ILanguageModel() = default;
 
-    // 核心处理接口：接收一个原始的 Frame，交给大模型处理
     virtual void processText(const SubtitleFrame& frame) = 0;
 
 signals:
     // 处理完成后，发出包含情绪和新文本的完整 Frame
     void textProcessed(const SubtitleFrame& processedFrame);
 
-    // 网络错误或 API 错误时发出
+    // 新增：性能与资源监控信号 (提示词Token, 生成Token, API耗时毫秒)
+    void performanceMetricsReported(int promptTokens, int completionTokens, qint64 latencyMs);
+
+    //网络错误信息
     void errorOccurred(const QString& errorMsg);
 };
 

@@ -6,15 +6,16 @@
 			<rect>
 				<x>0</x>
 				<y>0</y>
-				<width>450</width>
-				<height>350</height>
+				<width>480</width>
+				<height>550</height>
 			</rect>
 		</property>
 		<property name="windowTitle">
-			<string>Kotocord 控制台</string>
+			<string>Kotocord - 核心控制台</string>
 		</property>
 		<widget class="QWidget" name="centralwidget">
 			<layout class="QVBoxLayout" name="verticalLayout">
+
 				<item>
 					<widget class="QGroupBox" name="groupBoxInput">
 						<property name="title">
@@ -31,32 +32,133 @@
 							<item>
 								<widget class="QPushButton" name="btnSend">
 									<property name="text">
-										<string>发送 (Send)</string>
+										<string>发送</string>
 									</property>
 								</widget>
 							</item>
 						</layout>
 					</widget>
 				</item>
+
 				<item>
 					<widget class="QGroupBox" name="groupBoxLLM">
 						<property name="title">
-							<string>AI 大模型设置</string>
+							<string>AI 大脑设置 (LLM)</string>
 						</property>
-						<layout class="QVBoxLayout" name="verticalLayout_2">
-							<item>
+						<layout class="QFormLayout" name="formLayoutLLM">
+							<item row="0" column="0" colspan="2">
 								<widget class="QCheckBox" name="chkEnableLLM">
 									<property name="text">
-										<string>启用大模型情绪分析与文本润色 (LLM)</string>
+										<string>启用大模型情绪分析与颜文字</string>
 									</property>
 									<property name="checked">
 										<bool>true</bool>
 									</property>
 								</widget>
 							</item>
+							<item row="1" column="0">
+								<widget class="QLabel" name="labelModel">
+									<property name="text">
+										<string>当前模型:</string>
+									</property>
+								</widget>
+							</item>
+							<item row="1" column="1">
+								<widget class="QComboBox" name="comboModel">
+									<item>
+										<property name="text">
+											<string>虚拟测试模式 (MockLLM)</string>
+										</property>
+									</item>
+									<item>
+										<property name="text">
+											<string>DeepSeek V3 (云端)</string>
+										</property>
+									</item>
+								</widget>
+							</item>
+							<item row="2" column="0">
+								<widget class="QLabel" name="labelApiKey">
+									<property name="text">
+										<string>API Key:</string>
+									</property>
+								</widget>
+							</item>
+							<item row="2" column="1">
+								<widget class="QLineEdit" name="inputApiKey">
+									<property name="echoMode">
+										<enum>QLineEdit::Password</enum>
+									</property>
+									<property name="placeholderText">
+										<string>输入 sk-... (虚拟模式无需输入)</string>
+									</property>
+								</widget>
+							</item>
 						</layout>
 					</widget>
 				</item>
+
+				<item>
+					<widget class="QGroupBox" name="groupBoxMonitor">
+						<property name="title">
+							<string>状态与资源监控</string>
+						</property>
+						<layout class="QFormLayout" name="formLayoutMonitor">
+							<item row="0" column="0">
+								<widget class="QLabel" name="labelEmotionTitle">
+									<property name="text">
+										<string>当前判定情绪:</string>
+									</property>
+								</widget>
+							</item>
+							<item row="0" column="1">
+								<widget class="QLabel" name="lblCurrentEmotion">
+									<property name="text">
+										<string>等待分析...</string>
+									</property>
+									<property name="font">
+										<font>
+											<weight>75</weight>
+											<bold>true</bold>
+										</font>
+									</property>
+									<property name="styleSheet">
+										<string>color: #0078D7;</string>
+									</property>
+								</widget>
+							</item>
+							<item row="1" column="0">
+								<widget class="QLabel" name="labelLatencyTitle">
+									<property name="text">
+										<string>API 响应延迟:</string>
+									</property>
+								</widget>
+							</item>
+							<item row="1" column="1">
+								<widget class="QLabel" name="lblLatency">
+									<property name="text">
+										<string>0 ms</string>
+									</property>
+								</widget>
+							</item>
+							<item row="2" column="0">
+								<widget class="QLabel" name="labelTokenTitle">
+									<property name="text">
+										<string>单次 Token 消耗:</string>
+									</property>
+								</widget>
+							</item>
+							<item row="2" column="1">
+								<widget class="QLabel" name="lblTokens">
+									<property name="text">
+										<string>0 (提示: 0, 生成: 0)</string>
+									</property>
+								</widget>
+							</item>
+						</layout>
+					</widget>
+				</item>
+
 				<item>
 					<widget class="QGroupBox" name="groupBoxASR">
 						<property name="title">
@@ -96,6 +198,7 @@
 						</layout>
 					</widget>
 				</item>
+
 				<item>
 					<spacer name="verticalSpacer">
 						<property name="orientation">

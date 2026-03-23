@@ -84,19 +84,36 @@ set(VOSK_DIR "${CMAKE_SOURCE_DIR}/third_party/vosk")
 # 告诉项目去哪里找 vosk_api.h
 target_include_directories(${PROJECT_NAME} PRIVATE ${VOSK_DIR}/include)
 
+# Vosk 库的查找
+find_library(VOSK_LIB
+    NAMES vosk libvosk
+    PATHS ${VOSK_DIR}/lib
+    NO_DEFAULT_PATH  # 只在指定路径查找
+)
+if(NOT VOSK_LIB)
+    message(FATAL_ERROR "Vosk library not found in ${VOSK_DIR}/lib")
+endif()
+
 # 链接 Widgets, Multimedia 以及 Vosk 的静态导入库
-target_link_libraries(${PROJECT_NAME} PRIVATE 
-    Qt6::Widgets 
-    Qt6::Multimedia 
-    ${VOSK_DIR}/lib/libvosk.lib  # 链接 vosk 的 lib 文件
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt6::Widgets
+    Qt6::Multimedia
+    ${VOSK_LIB}   # 链接 Vosk 库
 )
 
-# 1. 查找 third_party/vosk/lib 下所有的 .dll 文件
-file(GLOB VOSK_DLLS "${VOSK_DIR}/lib/*.dll")
+# 1. 查找 third_party/vosk/lib 下所有的 .dll .so .dylib 运行时库到输出目录（根据平台选择）
+if(WIN32)
+    file(GLOB VOSK_RUNTIME_LIBS "${VOSK_DIR}/lib/*.dll")
+elseif(APPLE)
+    file(GLOB VOSK_RUNTIME_LIBS "${VOSK_DIR}/lib/*.dylib")
+else()
+    file(GLOB VOSK_RUNTIME_LIBS "${VOSK_DIR}/lib/*.so")
+endif()
 
-# 2. 将它们全部拷贝到编译输出目录 (bin)
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${VOSK_DLLS}
-    $<TARGET_FILE_DIR:${PROJECT_NAME}>
-)
+if(VOSK_RUNTIME_LIBS)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${VOSK_RUNTIME_LIBS}
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    )
+endif()

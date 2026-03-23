@@ -3,6 +3,7 @@
 #include <QPainterPath>
 #include <QMouseEvent>
 #include <QFontMetrics>
+#include <QWindow>
 
 SubtileRenderer::SubtileRenderer(QWidget* parent)
     : QWidget(parent), m_currentText("Kotocord Ready!") {
@@ -118,15 +119,21 @@ void SubtileRenderer::paintEvent(QPaintEvent* event) {
 // --- 鼠标拖拽逻辑实现 ---
 void SubtileRenderer::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
-        // 记录鼠标按下时，相对于窗口左上角的偏移量
-        m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
-        event->accept();
+        // Wayland 支持
+        if (windowHandle()) {
+            windowHandle()->startSystemMove();
+            event->accept();
+        } else {
+            // 如果 windowHandle 不可用
+            m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
+            event->accept();
+        }
     }
 }
 
 void SubtileRenderer::mouseMoveEvent(QMouseEvent* event) {
-    if (event->buttons() & Qt::LeftButton) {
-        // 移动窗口
+    // 仅非 Wayland
+    if ((event->buttons() & Qt::LeftButton) && !m_dragPosition.isNull()) {
         move(event->globalPosition().toPoint() - m_dragPosition);
         event->accept();
     }

@@ -1,4 +1,4 @@
-#include "VoskTranscriber.h"
+﻿#include "VoskTranscriber.h"
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -59,13 +59,12 @@ void VoskTranscriber::stop() {
 }
 
 void VoskTranscriber::onAudioDataReady(const QByteArray& data) {
-    // 新增的终极监控点：看看水到底流没流到这里，以及门有没有开！
-    qDebug() << "[Vosk - 入口] 收到信号! 数据大小:" << data.size()
-        << " | m_isRunning:" << m_isRunning
-        << " | 识别器非空:" << (m_recognizer != nullptr);
+    //// 新增的终极监控点：看看水到底流没流到这里，以及门有没有开！
+    //qDebug() << "[Vosk - 入口] 收到信号! 数据大小:" << data.size()
+    //    << " | m_isRunning:" << m_isRunning
+    //    << " | 识别器非空:" << (m_recognizer != nullptr);
 
     if(!m_isRunning || !m_recognizer) {
-        qDebug() << "[Vosk - 入口]  警告：引擎未启动或识别器为空，数据被直接丢弃！";
         return;
     }
 

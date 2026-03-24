@@ -5,7 +5,11 @@
 #include <vector>
 
 WhisperTranscriber::WhisperTranscriber(QObject* parent)
-	: IAudioTranscriber(parent),m_ctx(nullptr),m_isRunning(false) {}
+	: IAudioTranscriber(parent),
+	m_ctx(nullptr),
+	m_isRunning(false),
+	m_isInferencing(false),
+	m_inferenceThread(nullptr) {}
 
 WhisperTranscriber::~WhisperTranscriber() {
 	stop();
@@ -34,8 +38,16 @@ bool WhisperTranscriber::start() {
 	return true;
 }
 
+//安全停止
 void WhisperTranscriber::stop() {
 	m_isRunning = false;
+
+	// 如果后台正在狂算，必须等它算完再释放模型，否则必定闪退！
+	if(m_inferenceThread && m_inferenceThread->isRunning()) {
+		qDebug() << "[Whisper] 等待后台推理线程安全退出...";
+		m_inferenceThread->wait();
+	}
+
 	if(m_ctx) {
 		whisper_free(m_ctx);
 		m_ctx = nullptr;
@@ -96,54 +108,75 @@ void WhisperTranscriber::onAudioStreamFinished() {
 }
 
 void WhisperTranscriber::processBufferInference() {
-	if(!m_ctx || m_audioBuffer.isEmpty()) return;
+	if(!m_ctx) return;
 
-	QMutexLocker locker(&m_bufferMutex);
-
-	// 1. 简单的 WAV 头部跳过 (如果是纯 PCM 则不需要，这里做个兼容)
-	int offset = 0;
-	if(m_audioBuffer.size() > 44 && m_audioBuffer.startsWith("RIFF")) {
-		offset = 44;
-	}
-
-	// 2. 将 16-bit PCM 转换为 Whisper 需要的 32-bit Float (-1.0 ~ 1.0)
-	const int16_t* pcm16 = reinterpret_cast<const int16_t*>(m_audioBuffer.constData() + offset);
-	int samples = (m_audioBuffer.size() - offset) / 2;
-
-	std::vector<float> pcmf32(samples);
-	for(int i = 0; i < samples; ++i) {
-		pcmf32[i] = static_cast<float>(pcm16[i]) / 32768.0f;
-	}
-
-	qDebug() << "[Whisper] 开始推理，音频采样点数:" << samples;
-
-	// 3. 配置推理参数
-	whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-	wparams.language = "zh"; // 强制中文，或者填 "auto" 自动检测
-	wparams.print_progress = false;
-
-	// 4. 执行核心推理运算！(这里会吃满 CPU，所以后续我们要把它移到独立线程)
-	if(whisper_full(m_ctx,wparams,pcmf32.data(),pcmf32.size()) != 0) {
-		emit errorOccurred("Whisper 推理失败！");
-		m_audioBuffer.clear();
+	// 如果后台还在算上一句，就忽略这次触发（或者你也可以做成队列排队）
+	if(m_isInferencing.load()) {
+		qDebug() << "[Whisper] 后台正在推理，本次 VAD 触发已跳过";
 		return;
 	}
 
-	// 5. 提取识别结果
-	QString resultText;
-	const int n_segments = whisper_full_n_segments(m_ctx);
-	for(int i = 0; i < n_segments; ++i) {
-		const char* text = whisper_full_get_segment_text(m_ctx,i);
-		resultText += QString::fromUtf8(text);
+	QByteArray bufferCopy;
+	{
+		// 1. 获取锁，火速将当前积攒的声音切片拷贝出来，然后立刻清空原始盒子！
+		// 这样滴管（麦克风）就能继续无阻碍地往原始盒子里滴水，完全不被阻塞。
+		QMutexLocker locker(&m_bufferMutex);
+		if(m_audioBuffer.isEmpty()) return;
+
+		bufferCopy = m_audioBuffer;
+		m_audioBuffer.clear();
 	}
 
-	resultText = resultText.trimmed(); // 去除头尾空格
+	// 上锁，标记正在推理
+	m_isInferencing.store(true);
 
-	if(!resultText.isEmpty()) {
-		qDebug() << "[Whisper] 识别结果:" << resultText;
-		emit textReady(resultText,true); // 发送给指挥官 AppController！
-	}
+	// 2. 创建并剥离独立线程！
+	m_inferenceThread = QThread::create([this,bufferCopy]() {
+		// --- 以下代码全在后台线程运行，彻底释放主线程！ ---
 
-	// 6. 清空缓冲区，准备听下一句话
-	m_audioBuffer.clear();
+		int offset = 0;
+		if(bufferCopy.size() > 44 && bufferCopy.startsWith("RIFF")) offset = 44;
+
+		int samples = (bufferCopy.size() - offset) / 2;
+		const int16_t* pcm16 = reinterpret_cast<const int16_t*>(bufferCopy.constData() + offset);
+
+		std::vector<float> pcmf32(samples);
+		for(int i = 0; i < samples; ++i) {
+			pcmf32[i] = static_cast<float>(pcm16[i]) / 32768.0f;
+		}
+
+		qDebug() << "[Whisper-Thread] 后台开始推理，采样点数:" << samples;
+
+		whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+		wparams.language = "zh";
+		wparams.print_progress = false;
+
+		// 执行硬核计算...
+		if(whisper_full(m_ctx,wparams,pcmf32.data(),pcmf32.size()) != 0) {
+			emit errorOccurred("Whisper 后台推理失败！");
+		} else {
+			QString resultText;
+			const int n_segments = whisper_full_n_segments(m_ctx);
+			for(int i = 0; i < n_segments; ++i) {
+				const char* text = whisper_full_get_segment_text(m_ctx,i);
+				resultText += QString::fromUtf8(text);
+			}
+
+			resultText = resultText.trimmed();
+			if(!resultText.isEmpty()) {
+				qDebug() << "[Whisper-Thread] 推理完毕:" << resultText;
+				// 跨线程发射信号给主线程的 AppController，完美合规
+				emit textReady(resultText,true);
+			}
+		}
+
+		// 解除推理锁
+		m_isInferencing.store(false);
+	});
+
+	// 3. 线程运行结束后，自动清理自身内存，防止内存泄漏
+	connect(m_inferenceThread,&QThread::finished,m_inferenceThread,&QObject::deleteLater);
+
+	// 扣动扳机，后台起飞！
+	m_inferenceThread->start();
 }

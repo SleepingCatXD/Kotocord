@@ -5,6 +5,8 @@
 #include "whisper.h"
 #include <QThread>
 #include <QMutex>
+#include <atomic>
+#include <QPointer>
 
 // 前向声明 whisper_context (隐藏底层 C API 细节)
 struct whisper_context;
@@ -32,16 +34,19 @@ private:
 	QByteArray m_audioBuffer;
 	QMutex m_bufferMutex;
 
-	// --- 新增：VAD 断句算法所需变量 ---
+	// --- VAD 断句算法所需变量 ---
 	bool m_isSpeaking = false;
 	int m_silenceBytes = 0;
-
 	// 能量阈值 (16bit音频最大振幅是 32768，500 左右相当于极其微弱的底噪)
 	const int VAD_THRESHOLD = 500;
 	// 停顿多久算作断句？16kHz采样率，16位位深(2字节)，0.8秒 = 16000 * 2 * 0.8 = 25600 字节
 	const int MAX_SILENCE_BYTES = 25600;
 
-	// 预留给未来 VAD (断句检测) 和后台推理线程的逻辑
+	// --- 后台异步推理状态控制 ---
+	std::atomic<bool> m_isInferencing; // 防止多次重复触发
+	QPointer<QThread> m_inferenceThread;        // 追踪后台线程，防止安全释放时崩溃
+
+	// VAD (断句检测) 和后台推理线程的逻辑
 	void processBufferInference();
 };
 

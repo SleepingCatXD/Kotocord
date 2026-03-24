@@ -151,3 +151,19 @@ if(RUNTIME_LIBS)
         $<TARGET_FILE_DIR:${PROJECT_NAME}>
     )
 endif()
+
+# ==========================================
+# 5. 开启预编译头 (PCH) 优化编译
+# ==========================================
+target_precompile_headers(${PROJECT_NAME} PRIVATE
+    <QString>
+    <QObject>
+    <QWidget>
+    <QDebug>
+    <QMutex>
+    <QThread>
+    <QSettings>
+    <QTimer>
+    <QJsonDocument>
+    <QNetworkAccessManager>
+)

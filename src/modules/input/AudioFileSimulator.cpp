@@ -1,4 +1,4 @@
-#include "AudioFileSimulator.h"
+﻿#include "AudioFileSimulator.h"
 #include <QDebug>
 
 AudioFileSimulator::AudioFileSimulator(QObject* parent) : QObject(parent) {
@@ -39,7 +39,7 @@ void AudioFileSimulator::stop() {
 
 void AudioFileSimulator::readNextChunk() {
     if(!m_file.isOpen() || m_file.atEnd()) {
-        qDebug() << "[AudioSim] 文件读取完毕或未打开，停止模拟。"; // 新增
+        qDebug() << "[AudioSim] 文件读取完毕或未打开，停止模拟。";
         stop();
         emit finished();
         return;
@@ -47,8 +47,8 @@ void AudioFileSimulator::readNextChunk() {
 
     QByteArray chunk = m_file.read(CHUNK_SIZE);
 
-    // 新增这一行：看看每次到底读了多少字节出来
-    qDebug() << "[AudioSim] 成功读取一块音频，大小:" << chunk.size() << "bytes";
+    // 检查每次到底读了多少字节出来
+    //qDebug() << "[AudioSim] 成功读取一块音频，大小:" << chunk.size() << "bytes";
 
     if(chunk.size() > 0) {
         emit audioDataReady(chunk);

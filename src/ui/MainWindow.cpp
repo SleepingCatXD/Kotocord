@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include "ui_MainWindow.h"
 
 #include <QVBoxLayout>
@@ -15,7 +15,7 @@
 
 #include "../modules/input/VoskTranscriber.h"
 #include "../modules/input/AudioFileSimulator.h"
-
+#include "../modules/system/SystemResourceMonitor.h"
 
 #include <QScreen>
 #include <QGuiApplication>
@@ -54,7 +54,7 @@ MainWindow::MainWindow(QWidget* parent)
     // 告诉 Qt 的事件循环，认识我们自定义的结构体
     qRegisterMetaType<SubtitleFrame>("SubtitleFrame");
 
-    m_overlayWidget = new SubtileRenderer(nullptr);
+    m_overlayWidget = new SubtitleRenderer(nullptr);
     m_overlayWidget->setAttribute(Qt::WA_QuitOnClose, false);
 
     //新增：计算屏幕中心靠下的位置
@@ -74,6 +74,14 @@ MainWindow::MainWindow(QWidget* parent)
 
     m_appController->setLanguageModel(m_mockLLM);
     m_appController->setRenderWidget(m_overlayWidget);
+
+	// --- 启动系统资源监控 ---
+	SystemResourceMonitor* sysMonitor = new SystemResourceMonitor(this);
+	connect(sysMonitor,&SystemResourceMonitor::resourceUpdated,this,[=](double cpu,double mem) {
+		ui->lblCpu->setText(QString::number(cpu,'f',2) + " %");
+		ui->lblMem->setText(QString::number(mem,'f',2) + " MB");
+	});
+	sysMonitor->start(1000); // 每秒刷新一次
 
     // ==========================================
     // 信号槽连接：打通 UI 和中枢神经

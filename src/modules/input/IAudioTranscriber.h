@@ -16,6 +16,11 @@ public:
     virtual bool start() = 0;
     virtual void stop() = 0;
 
+//新增这部分：纯虚槽函数，让子类必须实现它们
+public slots:
+	virtual void onAudioDataReady(const QByteArray& data) = 0;
+	virtual void onAudioStreamFinished() = 0;
+
 signals:
     // 核心信号：当引擎识别出文字时触发。
     // isFinal = false: 比如你说 "你好"，还在识别中，用来做界面实时滚动显示。

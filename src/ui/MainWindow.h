@@ -25,7 +25,7 @@ public:
 
 private:
     Ui::MainWindow* ui;
-    SubtileRenderer* m_overlayWidget; // 添加透明窗口指针
+    SubtitleRenderer* m_overlayWidget; // 添加透明窗口指针
 
     //新增：核心控制器和虚拟大模型
     AppController* m_appController;

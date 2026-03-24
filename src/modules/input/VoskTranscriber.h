@@ -1,4 +1,4 @@
-//继承自 IAudioTranscriber
+﻿//继承自 IAudioTranscriber
 #ifndef VOSKTRANSCRIBER_H
 #define VOSKTRANSCRIBER_H
 

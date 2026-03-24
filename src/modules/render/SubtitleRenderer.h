@@ -1,17 +1,18 @@
-#ifndef SUBTITLERENDERER_H
+﻿#ifndef SUBTITLERENDERER_H
 #define SUBTITLERENDERER_H
 
 #include <QWidget>
 #include <QString>
 #include <QPoint>
+#include "../../core/DataTypes.h"
 
-class SubtileRenderer : public QWidget {
+class SubtitleRenderer : public QWidget {
     Q_OBJECT
 public:
-    explicit SubtileRenderer(QWidget* parent = nullptr);
+    explicit SubtitleRenderer(QWidget* parent = nullptr);
 
-    // 提供一个接口，用于将来接收新台词
-    void setText(const QString& text);
+public slots:
+	void updateFrame(const SubtitleFrame& frame);
 
 protected:
     // 核心绘制事件
@@ -23,6 +24,7 @@ protected:
 private:
     QString m_currentText;
     QPoint m_dragPosition;
+	SubtitleFrame m_currentFrame; // 存下当前的完整状态帧
 };
 
 #endif // SUBTITLERENDERER_H

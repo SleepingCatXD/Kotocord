@@ -5,7 +5,7 @@
 #include <QFontMetrics>
 #include <QWindow>
 
-SubtileRenderer::SubtileRenderer(QWidget* parent)
+SubtitleRenderer::SubtitleRenderer(QWidget* parent)
     : QWidget(parent), m_currentText("Kotocord Ready!") {
 
     // 1. 设置窗口标志：无边框 | 保持置顶 | 作为工具窗口（不在任务栏显示独立图标，可选）
@@ -18,14 +18,20 @@ SubtileRenderer::SubtileRenderer(QWidget* parent)
     resize(1000, 200);
 }
 
-void SubtileRenderer::setText(const QString& text) {
-    m_currentText = text;
-    update(); // 触发 paintEvent 重新绘制
+void SubtitleRenderer::updateFrame(const SubtitleFrame& frame) {
+	// 简单的时序保护：如果屏幕上已经是新的一句话了，但上一句话的大模型结果才迟迟传回来，就丢弃旧结果，防止画面乱跳
+	if(m_currentFrame.frameId > frame.frameId) {
+		qDebug() << "[Renderer] 收到过期的附魔结果，已丢弃。";
+		return;
+	}
+
+	m_currentFrame = frame;
+	update(); // 触发重绘
 }
 
-void SubtileRenderer::paintEvent(QPaintEvent* event) {
+void SubtitleRenderer::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
-    if (m_currentText.isEmpty()) return;
+	if(m_currentFrame.displayText.isEmpty()) return;
 
     QPainter painter(this);
     // 每次绘制前清空背景，防止 OBS 捕获到残影
@@ -51,8 +57,8 @@ void SubtileRenderer::paintEvent(QPaintEvent* event) {
 
         QString currentLine = "";
         // 遍历当前文本，逐字测量宽度
-        for (int i = 0; i < m_currentText.length(); ++i) {
-            QChar c = m_currentText[i];
+        for (int i = 0; i < m_currentFrame.displayText.length(); ++i) {
+            QChar c = m_currentFrame.displayText[i];
             QString testLine = currentLine + c;
 
             // 如果加上这个字超宽了，就断行
@@ -107,17 +113,27 @@ void SubtileRenderer::paintEvent(QPaintEvent* event) {
     painter.drawPath(path);
 
     // 顶层：文字内部渐变填充
-    painter.setPen(Qt::NoPen);
-    // 调整渐变范围，使其覆盖整个多行文本的高度
-    QLinearGradient gradient(0, renderBox.top(), 0, renderBox.bottom());
-    gradient.setColorAt(0.0, QColor(255, 175, 204));
-    gradient.setColorAt(1.0, QColor(162, 210, 255));
-    painter.setBrush(gradient);
-    painter.drawPath(path);
+	painter.setPen(Qt::NoPen);
+
+	if(!m_currentFrame.isLlmProcessed && m_currentFrame.isFinal) {
+		// 【第一阶段：大模型正在思考中】
+		// 比如用纯白色，并且在句尾悄悄加上 "..." 提示观众 AI 正在算
+		painter.setBrush(QColor(255,255,255));
+		// 你甚至可以在上面 path.addText 的时候，给这段文字加上一个淡入淡出的动画
+	} else {
+		// 【第二阶段：大模型附魔完毕】
+		// 使用你之前酷炫的粉蓝渐变色，配合颜文字华丽登场！
+		QLinearGradient gradient(0,renderBox.top(),0,renderBox.bottom());
+		gradient.setColorAt(0.0,QColor(255,175,204));
+		gradient.setColorAt(1.0,QColor(162,210,255));
+		painter.setBrush(gradient);
+	}
+
+	painter.drawPath(path);
 }
 
 // --- 鼠标拖拽逻辑实现 ---
-void SubtileRenderer::mousePressEvent(QMouseEvent* event) {
+void SubtitleRenderer::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         // Wayland 支持
         if (windowHandle()) {
@@ -131,7 +147,7 @@ void SubtileRenderer::mousePressEvent(QMouseEvent* event) {
     }
 }
 
-void SubtileRenderer::mouseMoveEvent(QMouseEvent* event) {
+void SubtitleRenderer::mouseMoveEvent(QMouseEvent* event) {
     // 仅非 Wayland
     if ((event->buttons() & Qt::LeftButton) && !m_dragPosition.isNull()) {
         move(event->globalPosition().toPoint() - m_dragPosition);

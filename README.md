@@ -24,6 +24,8 @@
 
 将模型解压到 resources/model/ 目录下。
 
+准备Whisper whisper.h whisper.lib whisper.dll
+
 ## 开源协议与致谢 (Acknowledgments)
 Kotocord 的诞生离不开以下优秀的开源项目：
 

@@ -25,14 +25,17 @@ inline EmotionType stringToEmotion(const QString& str) {
 
 // 3. 贯穿整个程序的数据包
 struct SubtitleFrame {
+	qint64 frameId;         // 新增：每句话的唯一标识符
     QString rawText;
     QString displayText;
     EmotionType emotion;
     bool isFinal;
+	bool isLlmProcessed;    // 新增：大模型是否已经处理完毕？
     int tokenCost;          // 新增：记录这层转换花掉的 Token 消耗
 
     // 默认构造函数
-    SubtitleFrame() : emotion(EmotionType::Neutral), isFinal(true), tokenCost(0) {}
+	SubtitleFrame(): frameId(0),emotion(EmotionType::Neutral),
+		isFinal(true),isLlmProcessed(false),tokenCost(0) {}
 };
 
 Q_DECLARE_METATYPE(SubtitleFrame)

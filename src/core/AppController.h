@@ -20,7 +20,7 @@ public:
 
     // 依赖注入：告诉控制器使用哪个 LLM 和渲染窗口
     void setLanguageModel(ILanguageModel* llm);
-    void setRenderWidget(SubtileRenderer* renderWidget);
+    void setRenderWidget(SubtitleRenderer* renderWidget);
 
     void setLLMEnabled(bool enabled);
     // 新增：注入颜文字管理器的接口
@@ -37,9 +37,10 @@ private slots:
 
 private:
     ILanguageModel* m_llm;
-    SubtileRenderer* m_renderWidget;
+    SubtitleRenderer* m_renderWidget;
     bool m_llmEnabled; // 记录 LLM 开关状态
     KaomojiManager* m_kaomojiManager;
+	qint64 m_currentFrameId;
 };
 
 #endif // APPCONTROLLER_H

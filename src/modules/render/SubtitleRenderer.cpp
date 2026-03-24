@@ -6,7 +6,7 @@
 #include <QWindow>
 
 SubtitleRenderer::SubtitleRenderer(QWidget* parent)
-    : QWidget(parent), m_currentText("Kotocord Ready!") {
+    : QWidget(parent) {
 
     // 1. 设置窗口标志：无边框 | 保持置顶 | 作为工具窗口（不在任务栏显示独立图标，可选）
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
@@ -16,6 +16,10 @@ SubtitleRenderer::SubtitleRenderer(QWidget* parent)
 
     // 设置一个比较宽的初始大小，适合放字幕
     resize(1000, 200);
+	// 新增：初始化第一帧结构体
+	m_currentFrame.frameId = 0;
+	m_currentFrame.displayText = "Kotocord Ready!";
+	m_currentFrame.isFinal = true; // 设为 true 才能显示渐变色！
 }
 
 void SubtitleRenderer::updateFrame(const SubtitleFrame& frame) {
@@ -48,38 +52,57 @@ void SubtitleRenderer::paintEvent(QPaintEvent* event) {
     QStringList lines;
     int lineHeight = 0;
 
-    // 3. 核心排版循环：动态换行与缩放
-    while (fontSize > 12) { // 字体最小不能小于 12
-        font.setPointSize(fontSize);
-        QFontMetrics fm(font);
-        lineHeight = fm.height();
-        lines.clear();
+	// 3. 核心排版循环：动态换行与缩放
+	while(fontSize > 12) { // 字体最小不能小于 12
+		font.setPointSize(fontSize);
+		QFontMetrics fm(font);
+		lineHeight = fm.height();
+		lines.clear();
 
-        QString currentLine = "";
-        // 遍历当前文本，逐字测量宽度
-        for (int i = 0; i < m_currentFrame.displayText.length(); ++i) {
-            QChar c = m_currentFrame.displayText[i];
-            QString testLine = currentLine + c;
+		// --- 新增：智能分词 (Tokenization) 算法 ---
+		QStringList tokens;
+		QString currentToken;
+		for(int i = 0; i < m_currentFrame.displayText.length(); ++i) {
+			QChar c = m_currentFrame.displayText[i];
 
-            // 如果加上这个字超宽了，就断行
-            if (fm.horizontalAdvance(testLine) > renderBox.width()) {
-                lines.append(currentLine);
-                currentLine = c;
-            }
-            else {
-                currentLine = testLine;
-            }
-        }
-        lines.append(currentLine); // 把最后一行加进去
+			// 如果是空格，或者是中日韩统一表意文字 (CJK)，视为独立的断句点
+			if(c.isSpace() || (c.unicode() >= 0x4E00 && c.unicode() <= 0x9FA5)) {
+				if(!currentToken.isEmpty()) {
+					tokens.append(currentToken);
+					currentToken.clear();
+				}
+				tokens.append(QString(c)); // 把汉字或空格作为一个独立的 token
+			} else {
+				// 字母、数字、颜文字符号，全部“粘”在一起作为一个整体 Token
+				currentToken.append(c);
+			}
+		}
+		if(!currentToken.isEmpty()) tokens.append(currentToken);
 
-        // 检查总高度是否能放进窗口
-        if (lines.size() * lineHeight <= renderBox.height()) {
-            break; // 完美容纳，跳出循环！
-        }
+		// --- 修改：按 Token 拼装行 ---
+		QString currentLine = "";
+		for(const QString& token : tokens) {
+			QString testLine = currentLine + token;
 
-        // 放不下，缩小字体继续算
-        fontSize -= 2;
-    }
+			// 如果加上这个 Token 超宽了，并且当前行不是空的，就强制换行
+			if(fm.horizontalAdvance(testLine) > renderBox.width() && !currentLine.isEmpty()) {
+				lines.append(currentLine);
+				// 如果导致换行的是个空格，下一行就不需要以空格开头了
+				currentLine = token.trimmed().isEmpty() ? "" : token;
+			} else {
+				currentLine = testLine;
+			}
+		}
+		lines.append(currentLine); // 把最后一行加进去
+
+		// 检查总高度是否能放进窗口
+		if(lines.size() * lineHeight <= renderBox.height()) {
+			break; // 完美容纳，跳出循环！
+		}
+
+		// 放不下，缩小字体继续算
+		fontSize -= 2;
+	}
 
     // 4. 将排版好的多行文字转换为 QPainterPath
     QPainterPath path;

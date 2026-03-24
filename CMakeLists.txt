@@ -128,11 +128,20 @@ if(WIN32)
     file(GLOB RUNTIME_LIBS 
         "${VOSK_DIR}/lib/*.dll" 
         "${WHISPER_DIR}/lib/*.dll"
+        "${WHISPER_DIR}/ggml/lib/*.dll"
     )
 elseif(APPLE)
-    file(GLOB RUNTIME_LIBS "${VOSK_DIR}/lib/*.dylib" "${WHISPER_DIR}/lib/*.dylib")
+    file(GLOB RUNTIME_LIBS 
+        "${VOSK_DIR}/lib/*.dylib" 
+        "${WHISPER_DIR}/lib/*.dylib"
+        "${WHISPER_DIR}/ggml/lib/*.dylib"
+    )
 else()
-    file(GLOB RUNTIME_LIBS "${VOSK_DIR}/lib/*.so" "${WHISPER_DIR}/lib/*.so")
+    file(GLOB RUNTIME_LIBS 
+        "${VOSK_DIR}/lib/*.so" 
+        "${WHISPER_DIR}/lib/*.so"
+        "${WHISPER_DIR}/ggml/lib/*.so"
+    )
 endif()
 
 if(RUNTIME_LIBS)

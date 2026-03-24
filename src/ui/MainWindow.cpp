@@ -12,8 +12,6 @@
 #include "../modules/llm/DeepSeekAPIWorker.h"
 
 #include "../modules/llm/KaomojiManager.h"
-
-#include "../modules/input/VoskTranscriber.h"
 #include "../modules/input/AudioFileSimulator.h"
 #include "../modules/system/SystemResourceMonitor.h"
 
@@ -155,56 +153,58 @@ MainWindow::MainWindow(QWidget* parent)
         }
         });
 
-    // 1. 实例化 ASR 引擎和音频模拟器
-    VoskTranscriber* voskEngine = new VoskTranscriber(this);
-    AudioFileSimulator* audioSim = new AudioFileSimulator(this);
+	// --- 1. 实例化双引擎和音频模拟器 ---
+	m_voskEngine = new VoskTranscriber(this);
+	m_whisperEngine = new WhisperTranscriber(this);
+	AudioFileSimulator* audioSim = new AudioFileSimulator(this);
 
-    // 2. 连接数据流：音频滴管 -> Vosk -> AppController
-    connect(audioSim, &AudioFileSimulator::errorOccurred, this, [](const QString& msg) {
-        qDebug() << "[错误]" << msg;
-        });
-    connect(voskEngine, &IAudioTranscriber::errorOccurred, this, [](const QString& msg) {
-        qDebug() << "[错误]" << msg;
-        });
+	// 默认使用 Vosk (与 UI 的 RadioButton 初始状态对应)
+	m_currentASR = m_voskEngine;
 
-    // 强行检查连接是否成功，并打印它们在内存里的身份证号（地址）
-    bool isConnected = connect(audioSim,&AudioFileSimulator::audioDataReady,voskEngine,&VoskTranscriber::onAudioDataReady);
+	// --- 2. 动态切换逻辑 (点选单选框时，先熄火旧的，再换核心) ---
+	connect(ui->radioVosk,&QRadioButton::toggled,this,[=](bool checked){
+		if(checked) {
+			m_whisperEngine->stop(); // 强行拔掉 Whisper 的车钥匙
+			m_currentASR = m_voskEngine;
+			// 如果此时麦克风总开关是开着的，立刻启动新引擎
+			if(ui->chkEnableASR->isChecked()) m_currentASR->start();
+		}
+	});
 
-    qDebug() << "================ 测谎仪 ================";
-    qDebug() << "AudioSim 地址:" << audioSim;
-    qDebug() << "VoskEngine 地址:" << voskEngine;
-    qDebug() << "信号槽是否接通? :" << (isConnected ? "✅ 是的!" : "❌ 失败!");
-    qDebug() << "========================================";
+	connect(ui->radioWhisper,&QRadioButton::toggled,this,[=](bool checked){
+		if(checked) {
+			m_voskEngine->stop(); // 强行拔掉 Vosk 的车钥匙
+			m_currentASR = m_whisperEngine;
+			if(ui->chkEnableASR->isChecked()) m_currentASR->start();
+		}
+	});
 
-    //新增这根极其关键的线：点滴打完了，通知 Vosk 强制结算！
-    connect(audioSim,&AudioFileSimulator::finished,voskEngine,&VoskTranscriber::onAudioStreamFinished);
+	// --- 3. 连线：一拖二！把滴管的数据同时喂给两个引擎 ---
+	// (不用担心冲突，因为没有 start() 的引擎内部 m_isRunning 是 false，会直接 return)
+	connect(audioSim,&AudioFileSimulator::audioDataReady,m_voskEngine,&VoskTranscriber::onAudioDataReady);
+	connect(audioSim,&AudioFileSimulator::audioDataReady,m_whisperEngine,&WhisperTranscriber::onAudioDataReady);
 
-    // 补上这根丢失的神经！把 Vosk 的文字发送给中枢神经控制器
-    connect(voskEngine,&IAudioTranscriber::textReady,m_appController,&AppController::onASRTextReady);
+	connect(audioSim,&AudioFileSimulator::finished,m_voskEngine,&VoskTranscriber::onAudioStreamFinished);
+	connect(audioSim,&AudioFileSimulator::finished,m_whisperEngine,&WhisperTranscriber::onAudioStreamFinished);
 
-    // 3. 在 UI 的“启用麦克风”选框上绑定启动逻辑 (偷天换日，其实启动的是文件模拟器)
-    connect(ui->chkEnableASR, &QCheckBox::toggled, this, [=](bool checked) {
-        if (checked) {
-            if (voskEngine->start()) {
-                // 动态计算 test_audio.wav 的绝对路径
-                QString exeDir = QCoreApplication::applicationDirPath();
-                QString rawPath = QDir(exeDir).filePath("../resources/test_audio.wav");
-                //消除路径里的 "../"，让它变成纯粹的绝对路径
-                QString audioPath = QDir::cleanPath(rawPath);
+	// 把双引擎的文字出口，统一汇聚到大脑
+	connect(m_voskEngine,&IAudioTranscriber::textReady,m_appController,&AppController::onASRTextReady);
+	connect(m_whisperEngine,&IAudioTranscriber::textReady,m_appController,&AppController::onASRTextReady);
 
-                qDebug() << "[UI] 尝试读取测试音频:" << audioPath;
-                audioSim->start(audioPath);
-            }
-        }
-        else {
-            // 修改这里：在停止引擎之前，先手动触发一次强制结算
-            voskEngine->onAudioStreamFinished();
+	// --- 4. 启停控制 ---
+	connect(ui->chkEnableASR,&QCheckBox::toggled,this,[=](bool checked) {
+		if(checked) {
+			// 启动当前选中的引擎
+			if(m_currentASR->start()) {
+				QString audioPath = QDir::cleanPath(QDir(QCoreApplication::applicationDirPath()).filePath("../resources/test_audio.wav"));
+				audioSim->start(audioPath);
+			}
+		} else {
+			audioSim->stop();
+			m_currentASR->stop();
+		}
+	});
 
-            audioSim->stop();
-            voskEngine->stop();
-            qDebug() << "[UI] ASR 引擎与音频模拟已手动关闭。";
-        }
-    });
     // 实例化kaomojiManager
     KaomojiManager* kaomojiManager = new KaomojiManager(this);
     kaomojiManager->loadFromFile(QDir(QCoreApplication::applicationDirPath()).filePath("../resources/kaomoji.json"));

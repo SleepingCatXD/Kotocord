@@ -22,7 +22,6 @@ protected:
     void mouseMoveEvent(QMouseEvent* event) override;
 
 private:
-    QString m_currentText;
     QPoint m_dragPosition;
 	SubtitleFrame m_currentFrame; // 存下当前的完整状态帧
 };

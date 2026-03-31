@@ -2,82 +2,88 @@
 #include <QDebug>
 
 AudioCapture::AudioCapture(QObject* parent)
-    : QObject(parent), m_audioSource(nullptr), m_device(nullptr), m_isRecording(false) {
-
-    // 配置 ASR 黄金标准格式: 16kHz, 16-bit, Mono
-    m_format.setSampleRate(16000);
-    m_format.setChannelCount(1);
-    m_format.setSampleFormat(QAudioFormat::Int16);
-}
+	: QObject(parent),m_audioSource(nullptr),m_audioDevice(nullptr) {}
 
 AudioCapture::~AudioCapture() {
-    stop();
+	stop();
 }
 
 bool AudioCapture::start() {
-    if (m_isRecording) return true;
+	if(m_audioSource) return true; // 已经在录音了
 
-    // 获取默认麦克风
-    QAudioDevice defaultDevice = QMediaDevices::defaultAudioInput();
-    if (defaultDevice.isNull()) {
-        emit errorOccurred("No microphone detected!");
-        return false;
-    }
+	// 1. 检查系统是否有可用的麦克风输入设备
+	QAudioDevice defaultDevice = QMediaDevices::defaultAudioInput();
+	if(defaultDevice.isNull()) {
+		emit errorOccurred("未检测到任何麦克风设备，请检查硬件连接！");
+		return false;
+	}
 
-    // 检查设备是否支持我们的格式，如果不支持，Qt 底层通常会自动重采样，但打个日志有助于排错
-    if (!defaultDevice.isFormatSupported(m_format)) {
-        qWarning() << "Default format not supported, Qt will attempt to convert audio.";
-    }
+	qDebug() << "[AudioCapture] 找到默认麦克风:" << defaultDevice.description();
 
-    // 初始化 QAudioSource
-    m_audioSource = new QAudioSource(defaultDevice, m_format, this);
+	// 2. 极其严格的格式对齐 (为 AI 语音模型定制)
+	QAudioFormat format;
+	format.setSampleRate(16000);                // 16kHz
+	format.setChannelConfig(QAudioFormat::ChannelConfigMono); // 单声道
+	format.setSampleFormat(QAudioFormat::Int16); // 16位 PCM (也就是 Short)
 
-    // 设置缓冲区大小，避免延迟过高（这里设置为 100ms 左右的数据量）
-    m_audioSource->setBufferSize(16000 * 2 * 1 * 0.1);
+	// 检查麦克风是否支持这个格式 (有些高端声卡强制 48kHz，需要系统重采样)
+	if(!defaultDevice.isFormatSupported(format)) {
+		qDebug() << "[AudioCapture] 警告：麦克风原生不支持 16kHz 16-bit 单声道，Qt 将尝试系统级重采样！";
+	}
 
-    // 以推模式 (Push) 启动：它会返回一个只读的 QIODevice
-    m_device = m_audioSource->start();
+	// 3. 实例化音频源
+	m_audioSource = new QAudioSource(defaultDevice,format,this);
 
-    if (!m_device) {
-        emit errorOccurred("Failed to open microphone.");
-        delete m_audioSource;
-        m_audioSource = nullptr;
-        return false;
-    }
+	// 设置内部缓冲区大小 (比如 200ms 的数据)，避免频繁中断
+	// 16000(率) * 2(字节) * 1(声道) = 32000 Bytes/s. 200ms = 6400 Bytes.
+	m_audioSource->setBufferSize(6400);
 
-    // 绑定数据读取信号
-    connect(m_device, &QIODevice::readyRead, this, &AudioCapture::handleReadyRead);
+	// 监听状态变化
+	connect(m_audioSource,&QAudioSource::stateChanged,this,&AudioCapture::onStateChanged);
 
-    m_isRecording = true;
-    qDebug() << "Microphone started. Target format: 16kHz, 16bit, Mono.";
-    return true;
+	// 4. 启动录音！(返回一个 QIODevice 让我们读取实时数据)
+	m_audioDevice = m_audioSource->start();
+
+	if(!m_audioDevice) {
+		emit errorOccurred("无法打开麦克风！可能是权限被拒绝，或被其他程序独占。");
+		delete m_audioSource;
+		m_audioSource = nullptr;
+		return false;
+	}
+
+	// 5. 绑定实时读取信号
+	connect(m_audioDevice,&QIODevice::readyRead,this,&AudioCapture::onReadyRead);
+
+	qDebug() << "[AudioCapture] 麦克风已开启，开始持续监听...";
+	return true;
 }
 
 void AudioCapture::stop() {
-    if (!m_isRecording) return;
-
-    if (m_audioSource) {
-        m_audioSource->stop();
-        delete m_audioSource;
-        m_audioSource = nullptr;
-    }
-    m_device = nullptr; // 设备指针由 QAudioSource 管理，无需手动 delete
-    m_isRecording = false;
-    qDebug() << "Microphone stopped.";
+	if(m_audioSource) {
+		m_audioSource->stop();
+		delete m_audioSource;
+		m_audioSource = nullptr;
+		m_audioDevice = nullptr;
+		qDebug() << "[AudioCapture] 麦克风已关闭。";
+	}
 }
 
-bool AudioCapture::isRecording() const {
-    return m_isRecording;
+void AudioCapture::onReadyRead() {
+	if(!m_audioDevice) return;
+
+	// 一口气读出当前缓冲区里所有的声音切片
+	QByteArray data = m_audioDevice->readAll();
+
+	if(!data.isEmpty()) {
+		// 直接顺着信号管子，把 PCM 数据发射给下游的双引擎
+		emit audioDataReady(data);
+	}
 }
 
-void AudioCapture::handleReadyRead() {
-    if (!m_device) return;
-
-    // 读取所有可用音频数据
-    QByteArray data = m_device->readAll();
-
-    if (data.size() > 0) {
-        // 发送给上层模块 (比如 VoskTranscriber)
-        emit audioDataReady(data);
-    }
+void AudioCapture::onStateChanged(QAudio::State state) {
+	if(state == QAudio::StoppedState) {
+		if(m_audioSource && m_audioSource->error() != QAudio::NoError) {
+			emit errorOccurred("麦克风工作异常，错误代码: " + QString::number(m_audioSource->error()));
+		}
+	}
 }

@@ -26,7 +26,8 @@ bool WhisperTranscriber::start() {
 	qDebug() << "[Whisper] 正在加载模型:" << modelPath;
 
 	//核心：初始化 Whisper 上下文
-	m_ctx = whisper_init_from_file(modelPath.toUtf8().constData());
+	struct whisper_context_params cparams = whisper_context_default_params();
+	m_ctx = whisper_init_from_file_with_params(modelPath.toUtf8().constData(),cparams);
 	if(!m_ctx) {
 		emit errorOccurred("无法加载 Whisper 模型，请检查路径和文件是否正确！");
 		return false;

@@ -1,5 +1,6 @@
 # === C++ / Visual Studio / CMake 临时文件 ===
 .vs/
+.vscode/
 out/
 build/
 bin/

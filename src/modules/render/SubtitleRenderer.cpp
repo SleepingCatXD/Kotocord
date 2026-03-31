@@ -20,6 +20,7 @@ SubtitleRenderer::SubtitleRenderer(QWidget* parent)
 	m_currentFrame.frameId = 0;
 	m_currentFrame.displayText = "Kotocord Ready!";
 	m_currentFrame.isFinal = true; // 设为 true 才能显示渐变色！
+	m_currentFrame.isLlmProcessed = true; // 新增这行，假装它已经被大模型处理过了，强行激活渐变色！
 }
 
 void SubtitleRenderer::updateFrame(const SubtitleFrame& frame) {

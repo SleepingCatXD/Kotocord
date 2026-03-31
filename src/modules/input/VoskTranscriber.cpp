@@ -74,12 +74,12 @@ void VoskTranscriber::onAudioDataReady(const QByteArray& data) {
     if(isFinal) {
         const char* result = vosk_recognizer_result(m_recognizer);
         // 新增：打印最终识别的完整 JSON
-        qDebug() << "[Vosk - 最终结果] 原始 JSON:" << result;
+        //qDebug() << "[Vosk - 最终结果] 原始 JSON:" << result;
         parseAndEmitResult(result,true);
     } else {
         const char* partial = vosk_recognizer_partial_result(m_recognizer);
         // 新增：打印实时识别的中间 JSON
-        qDebug() << "[Vosk - 实时中间] 原始 JSON:" << partial;
+        //qDebug() << "[Vosk - 实时中间] 原始 JSON:" << partial;
         parseAndEmitResult(partial,false);
     }
 }

@@ -12,7 +12,7 @@
 #include "../modules/llm/DeepSeekAPIWorker.h"
 
 #include "../modules/llm/KaomojiManager.h"
-#include "../modules/input/AudioFileSimulator.h"
+#include "../modules/input/AudioCapture.h"
 #include "../modules/system/SystemResourceMonitor.h"
 
 #include <QScreen>
@@ -153,10 +153,10 @@ MainWindow::MainWindow(QWidget* parent)
         }
         });
 
-	// --- 1. 实例化双引擎和音频模拟器 ---
+	// --- 1. 实例化双引擎和真实麦克风 ---
 	m_voskEngine = new VoskTranscriber(this);
 	m_whisperEngine = new WhisperTranscriber(this);
-	AudioFileSimulator* audioSim = new AudioFileSimulator(this);
+	AudioCapture* micCapture = new AudioCapture(this);
 
 	// 默认使用 Vosk (与 UI 的 RadioButton 初始状态对应)
 	m_currentASR = m_voskEngine;
@@ -179,28 +179,24 @@ MainWindow::MainWindow(QWidget* parent)
 		}
 	});
 
-	// --- 3. 连线：一拖二！把滴管的数据同时喂给两个引擎 ---
-	// (不用担心冲突，因为没有 start() 的引擎内部 m_isRunning 是 false，会直接 return)
-	connect(audioSim,&AudioFileSimulator::audioDataReady,m_voskEngine,&VoskTranscriber::onAudioDataReady);
-	connect(audioSim,&AudioFileSimulator::audioDataReady,m_whisperEngine,&WhisperTranscriber::onAudioDataReady);
-
-	connect(audioSim,&AudioFileSimulator::finished,m_voskEngine,&VoskTranscriber::onAudioStreamFinished);
-	connect(audioSim,&AudioFileSimulator::finished,m_whisperEngine,&WhisperTranscriber::onAudioStreamFinished);
+	// --- 3. 连线：物理麦克风的数据源源不断喂给双引擎 ---
+	connect(micCapture,&AudioCapture::audioDataReady,m_voskEngine,&VoskTranscriber::onAudioDataReady);
+	connect(micCapture,&AudioCapture::audioDataReady,m_whisperEngine,&WhisperTranscriber::onAudioDataReady);
 
 	// 把双引擎的文字出口，统一汇聚到大脑
 	connect(m_voskEngine,&IAudioTranscriber::textReady,m_appController,&AppController::onASRTextReady);
 	connect(m_whisperEngine,&IAudioTranscriber::textReady,m_appController,&AppController::onASRTextReady);
 
-	// --- 4. 启停控制 ---
+	// --- 4. 启停控制 (彻底接管系统麦克风) ---
 	connect(ui->chkEnableASR,&QCheckBox::toggled,this,[=](bool checked) {
 		if(checked) {
-			// 启动当前选中的引擎
+			// 先启动底层引擎加载模型
 			if(m_currentASR->start()) {
-				QString audioPath = QDir::cleanPath(QDir(QCoreApplication::applicationDirPath()).filePath("../resources/test_audio.wav"));
-				audioSim->start(audioPath);
+				// 模型就绪后，正式打开系统麦克风！
+				micCapture->start();
 			}
 		} else {
-			audioSim->stop();
+			micCapture->stop(); // 立即切断麦克风
 			m_currentASR->stop();
 		}
 	});

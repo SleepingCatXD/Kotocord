@@ -70,7 +70,7 @@ void AppController::onManualTextEntered(const QString& text) {
 void AppController::onASRTextReady(const QString& text, bool isFinal) {
     if (text.isEmpty()) return;
 
-    qDebug() << "[AppController - ASR入口] 收到文本:" << text << "| 是否完结(isFinal):" << isFinal;
+    //qDebug() << "[AppController - ASR入口] 收到文本:" << text << "| 是否完结(isFinal):" << isFinal;
     // 如果还没说完 (isFinal == false)，就不送给 LLM，直接半透明渲染在屏幕上。
 
 	// --- 1. 锁屏拦截机制 ---
@@ -94,7 +94,7 @@ void AppController::onASRTextReady(const QString& text, bool isFinal) {
 	}
 
 	// --- 2. 正常无锁状态的处理 ---
-	qDebug() << "[AppController - ASR入口] 收到文本:" << text << "| 是否完结(isFinal):" << isFinal;
+	//qDebug() << "[AppController - ASR入口] 收到文本:" << text << "| 是否完结(isFinal):" << isFinal;
 
 	SubtitleFrame frame;
 	frame.frameId = m_currentFrameId;

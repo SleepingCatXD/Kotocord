@@ -31,7 +31,7 @@ bool VoskTranscriber::start() {
         // 核心修复：获取 Kotocord.exe 所在的 bin 目录
         QString exeDir = QCoreApplication::applicationDirPath();
         // 向上退一级到项目根目录，然后进入 resources
-        QString modelPath = QDir(exeDir).filePath("../resources/model/vosk-model-small-cn-0.22");
+        QString modelPath = QDir(exeDir).filePath("../../resources/model/vosk-model-small-cn-0.22");
 
         qDebug() << "[Vosk] 尝试加载模型的绝对路径:" << modelPath;
 

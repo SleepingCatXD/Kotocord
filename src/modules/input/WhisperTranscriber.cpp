@@ -20,7 +20,7 @@ bool WhisperTranscriber::start() {
 
 	// 动态拼接模型路径
 	QString exeDir = QCoreApplication::applicationDirPath();
-	QString modelPath = QDir(exeDir).filePath("../resources/model/ggml-small.bin");
+	QString modelPath = QDir(exeDir).filePath("../../resources/model/ggml-small.bin");
 	modelPath = QDir::cleanPath(modelPath);
 
 	qDebug() << "[Whisper] 正在加载模型:" << modelPath;

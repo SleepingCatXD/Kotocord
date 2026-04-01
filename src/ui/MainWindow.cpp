@@ -203,7 +203,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     // 实例化kaomojiManager
     KaomojiManager* kaomojiManager = new KaomojiManager(this);
-    kaomojiManager->loadFromFile(QDir(QCoreApplication::applicationDirPath()).filePath("../resources/kaomoji.json"));
+    kaomojiManager->loadFromFile(QDir(QCoreApplication::applicationDirPath()).filePath("../../resources/kaomoji.json"));
 
     // 补上这极其关键的一行！把兵工厂的钥匙交给指挥官
     m_appController->setKaomojiManager(kaomojiManager);

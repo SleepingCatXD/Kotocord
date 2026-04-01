@@ -8,6 +8,12 @@ CMakeSettings.json
 *.user
 launch.vs.json
 .editorconfig
+CMakeCache.txt
+
+# 忽略个人的机器路径配置
+CMakePresets.json
+CMakeUserPresets.json
+VSCODE_DEV_GUIDE.md
 
 # ==========================================
 # Qt 自动化生成的中间文件

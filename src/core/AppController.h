@@ -1,20 +1,16 @@
-﻿// 核心枢纽：串联输入、LLM、渲染和 OSC
-
-#ifndef APPCONTROLLER_H
+﻿#ifndef APPCONTROLLER_H
 #define APPCONTROLLER_H
 
 #include <QObject>
 #include <QQueue> 
 #include <QTimer>
 
-
 #include "DataTypes.h"
 #include "../modules/llm/ILanguageModel.h"
-#include "../modules/render/SubtitleRenderer.h"
-#include "../modules/input/IAudioTranscriber.h"
+//#include "../modules/render/SubtitleRenderer.h"
+//#include "../modules/input/IAudioTranscriber.h"
 #include "../modules/llm/KaomojiManager.h"
 
-// 在顶部前向声明
 class KaomojiManager;
 
 class AppController : public QObject {
@@ -22,27 +18,25 @@ class AppController : public QObject {
 public:
     explicit AppController(QObject* parent = nullptr);
 
-    // 依赖注入：告诉控制器使用哪个 LLM 和渲染窗口
-    void setLanguageModel(ILanguageModel* llm);
-    void setRenderWidget(SubtitleRenderer* renderWidget);
-
+    void setLanguageModel(ILanguageModel* llm);//依赖注入：选择LLM
+    //void setRenderWidget(SubtitleRenderer* renderWidget);
     void setLLMEnabled(bool enabled);
-    // 新增：注入颜文字管理器的接口
-    void setKaomojiManager(KaomojiManager* manager);
+    void setKaomojiManager(KaomojiManager* manager);// 注入颜文字管理器的接口
+
+signals:
+	void subtitleReadyForRender(const SubtitleFrame& frame);//文本渲染帧已准备好
 
 public slots:
-    // 接收来自 MainWindow 的手动文本输入
-    void onManualTextEntered(const QString& text);
-    void onASRTextReady(const QString& text, bool isFinal);
+    void onManualTextEntered(const QString& text);//接收手动文本输入
+    void onASRTextReady(const QString& text, bool isFinal);//接收语音文本解析输入
 
 private slots:
-    // 接收来自 LLM 的处理结果
-    void onLLMTextProcessed(const SubtitleFrame& frame);
+    void onLLMTextProcessed(const SubtitleFrame& frame);//接收LLM处理结果
 	void processNextInQueue(); //处理队列中下一句话的槽函数
 
 private:
     ILanguageModel* m_llm;
-    SubtitleRenderer* m_renderWidget;
+    //SubtitleRenderer* m_renderWidget;
     bool m_llmEnabled; // 记录 LLM 开关状态
     KaomojiManager* m_kaomojiManager;
 	qint64 m_currentFrameId;

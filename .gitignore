@@ -11,7 +11,7 @@ launch.vs.json
 CMakeCache.txt
 
 # 忽略个人的机器路径配置
-CMakePresets.json
+#CMakePresets.json
 CMakeUserPresets.json
 VSCODE_DEV_GUIDE.md
 

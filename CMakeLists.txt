@@ -47,10 +47,11 @@ set(MODULE_SOURCES
     src/modules/input/WhisperTranscriber.h
     src/modules/input/WhisperTranscriber.cpp
 
-    src/modules/input/AudioCapture.h
-    src/modules/input/AudioCapture.cpp 
-    src/modules/input/AudioFileSimulator.h
-    src/modules/input/AudioFileSimulator.cpp
+    # Capture
+    src/modules/capture/AudioCapture.h
+    src/modules/capture/AudioCapture.cpp
+    src/modules/capture/AudioFileSimulator.h
+    src/modules/capture/AudioFileSimulator.cpp
 
     # LLM & Emotion
     src/modules/llm/ILanguageModel.h
@@ -61,8 +62,6 @@ set(MODULE_SOURCES
 
     src/modules/llm/KaomojiManager.h
     src/modules/llm/KaomojiManager.cpp
-
-    #src/modules/llm/OpenAILLMWorker.h
 
     # Render
     src/modules/render/SubtitleRenderer.h
@@ -93,9 +92,11 @@ set(VOSK_DIR "${CMAKE_SOURCE_DIR}/third_party/vosk")
 set(WHISPER_DIR "${CMAKE_SOURCE_DIR}/third_party/whisper")
 
 # 4.1 引入头文件目录
-target_include_directories(${PROJECT_NAME} PRIVATE ${VOSK_DIR}/include)
-target_include_directories(${PROJECT_NAME} PRIVATE ${WHISPER_DIR}/include)
-target_include_directories(${PROJECT_NAME} PRIVATE ${WHISPER_DIR}/ggml/include)
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${VOSK_DIR}/include
+    ${WHISPER_DIR}/include
+    ${WHISPER_DIR}/ggml/include
+)
 
 # 4.2 查找静态导入库 (.lib / .a)
 find_library(VOSK_LIB
@@ -124,7 +125,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${WHISPER_LIB}
 )
 
-# 4.4 编译完成后，自动拷贝所有相关的 DLL 到执行目录
+# 4.4 DLL 自动拷贝脚本
 if(WIN32)
     # 为了防止你把 dll 放错地方，这里同时扫描 lib 和 bin 目录
     file(GLOB RUNTIME_LIBS 
@@ -155,7 +156,7 @@ if(RUNTIME_LIBS)
 endif()
 
 # ==========================================
-# 5. 开启预编译头 (PCH) 优化编译
+# 5. 预编译头 (PCH)
 # ==========================================
 target_precompile_headers(${PROJECT_NAME} PRIVATE
     <QString>

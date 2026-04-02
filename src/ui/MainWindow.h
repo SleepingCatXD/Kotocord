@@ -3,13 +3,13 @@
 
 #include <QMainWindow>
 #include "../modules/render/SubtitleRenderer.h"
-#include "../modules/input/VoskTranscriber.h"
-#include "../modules/input/WhisperTranscriber.h"
+//#include "../modules/input/VoskTranscriber.h"
+//#include "../modules/input/WhisperTranscriber.h"
+#include "../core/DataTypes.h"
 
-// 引入前向声明或直接 include
 class AppController;
-class MockLLMWorker;
-class DeepSeekAPIWorker;
+//class MockLLMWorker;
+//class DeepSeekAPIWorker;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -22,20 +22,28 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget* parent = nullptr);
+	MainWindow(AppController* controller,QWidget* parent = nullptr);//传入外部AppController
     ~MainWindow();
+
+signals:
+	//生成UI点击信号
+	void asrToggleRequested(bool enabled);
+	void asrEngineSwitched(bool isWhisper); // false: Vosk, true: Whisper
+	void llmEngineSwitched(bool isDeepSeek); // false: Mock, true: DeepSeek
+	//假如使用的并非两个模型，bool型就不能用了
+	void apiKeyChanged(const QString& key);
+
+public slots:
+	// 接收来自外部的数据以刷新 UI
+	void onSubtitleReady(const SubtitleFrame& frame);
+	void updateCpuMem(double cpu,double mem);
+	void updateLatencyAndTokens(int prompt,int completion,qint64 latency);
+	void updateEmotionLabel(const SubtitleFrame& frame);
+	void onSystemReady(bool ready); // 用于更新那个绿色/红色的状态文本
 
 private:
     Ui::MainWindow* ui;
     SubtitleRenderer* m_overlayWidget; // 添加透明窗口指针
-
-	VoskTranscriber* m_voskEngine;
-	WhisperTranscriber* m_whisperEngine;
-	IAudioTranscriber* m_currentASR; // 当前激活的引擎指针
-
-    //新增：核心控制器和虚拟大模型
     AppController* m_appController;
-    MockLLMWorker* m_mockLLM;
-    DeepSeekAPIWorker* m_deepSeekLLM;
 };
 #endif // MAINWINDOW_H

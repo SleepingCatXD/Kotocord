@@ -12,7 +12,7 @@
 ### 目录结构要求
 请在项目根目录下创建 `third_party` 文件夹，并严格按照以下结构放置头文件与动态/静态链接库（预编译的 Windows DLL/LIB 可以从它们的官方 Release 页面获取）：
 
-\`\`\`text
+```text
 third_party
  ├── vosk
  │   ├── include/ (放置 vosk_api.h)
@@ -23,9 +23,12 @@ third_party
      └── ggml
          ├── include/ (放置 ggml.h 等所有 ggml 相关头文件)
          └── lib/     (放置 ggml.dll, ggml-cpu.dll 等)
-\`\`\`
+```
+
+
 
 ### 模型文件准备
+
 * **Vosk 模型**：下载轻量级中文模型，解压至 `resources/model/vosk-model-small-cn/`。
 * **Whisper 模型**：下载 `ggml-small.bin`，放置于 `resources/model/` 目录下。
 

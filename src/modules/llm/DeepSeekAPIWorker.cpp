@@ -35,8 +35,18 @@ QString DeepSeekAPIWorker::buildSystemPrompt() const {
 }
 
 void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
+
+	//保底结果
+	SubtitleFrame fallbackFrame = frame;
+	fallbackFrame.emotion = EmotionType::Neutral;
+
     if (frame.rawText.isEmpty() || m_apiKey.isEmpty()) {
-        emit errorOccurred("文本为空或未配置 API Key。");
+		qDebug() << "[DeepSeekWorker] 拦截: 文本为空或未配置 API Key。";
+		if(m_apiKey.isEmpty()){
+			qDebug() << "未配置 API Key";
+		}
+		emit errorOccurred(m_apiKey.isEmpty() ? "未配置 API Key" : "文本为空");
+		emit textProcessed(fallbackFrame); //强行交还钥匙
         return;
     }
 
@@ -70,8 +80,19 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
 
 	// 使用时间戳，避免 new 带来的泄漏风险
 	qint64 startTimeMs = QDateTime::currentMSecsSinceEpoch();
-
 	QNetworkReply* reply = m_netManager->post(request,postData);
+
+	// 引入 5 秒 API 超时自毁机制
+	QTimer* timeoutTimer = new QTimer(reply); // 挂载在 reply 上自动销毁
+	timeoutTimer->setSingleShot(true);
+	timeoutTimer->start(5000);
+	connect(timeoutTimer,&QTimer::timeout,reply,[=]() {
+		if(reply->isRunning()) {
+			qDebug() << "[DeepSeekWorker] ⚠️ API 请求超时 5 秒，强制阻断！";
+			reply->abort(); // 这会立刻触发下方的 finished 信号，并带有取消错误
+		}
+	});
+
 	SubtitleFrame localFrame = frame;// 在这里做一次非 const 的深拷贝
 
     //捕获时只需要 [=] 即可，它会自动按值捕获 localFrame
@@ -79,7 +100,10 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
 		qint64 latency = QDateTime::currentMSecsSinceEpoch() - startTimeMs;
 
         if (reply->error() != QNetworkReply::NoError) {
+			qDebug() << "[DeepSeekWorker] ❌ 网络/API 报错:" << reply->errorString();
             emit errorOccurred("API 请求失败: " + reply->errorString());
+			fallbackFrame.tokenCost = 0;
+			emit textProcessed(localFrame);
             reply->deleteLater();
             return;
         }
@@ -91,7 +115,6 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
         // 提取大模型返回的正文
         QJsonArray choices = rootObj["choices"].toArray();
         QString jsonStr = choices[0].toObject()["message"].toObject()["content"].toString();
-
         // 去除markdown格式头
         jsonStr = jsonStr.replace("```json", "").replace("```", "").trimmed();
 
@@ -101,17 +124,16 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
         // 解析大模型产生的 JSON
         QJsonDocument innerDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
         if (innerDoc.isNull()) {
-            qDebug() << "[LLM 错误] JSON 解析依然失败！请检查模型返回内容。";
+			qDebug() << "[LLM 错误] JSON 解析失败:" << jsonStr;
+			emit textProcessed(fallbackFrame);
+			reply->deleteLater();
+			return;
         }
         else {
-            QString emotionStr = innerDoc.object()["emotion"].toString();
-            localFrame.emotion = stringToEmotion(emotionStr);
+			QString emotionStr = innerDoc.object()["emotion"].toString();
+			localFrame.emotion = stringToEmotion(emotionStr);
+			qDebug() << "[LLM] 分析完成 | 判定情绪:" << emotionStr << "| 耗时:" << latency << "ms";
         }
-
-        QString emotionStr = innerDoc.object()["emotion"].toString();
-
-        // 修改拷贝的 localFrame
-        localFrame.emotion = stringToEmotion(emotionStr);
 
         // 提取并报告 Token 消耗
         QJsonObject usage = rootObj["usage"].toObject();
@@ -119,12 +141,8 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
         int completionTokens = usage["completion_tokens"].toInt();
         localFrame.tokenCost = promptTokens + completionTokens;
 
-        qDebug() << "[LLM] 分析完成 | 判定情绪:" << emotionStr
-            << "| 耗时:" << latency << "ms | 消耗Token:" << localFrame.tokenCost;
-
         // 发送更新后的帧 (此时 frame.emotion 已被赋予真实的分析结果)
         emit textProcessed(localFrame);
-
         // 向 UI 广播监控数据
         emit performanceMetricsReported(promptTokens, completionTokens, latency);
 

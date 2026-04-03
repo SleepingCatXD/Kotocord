@@ -8,7 +8,7 @@ AppController::AppController(QObject* parent)
 	m_llmEnabled(true),
 	m_kaomojiManager (nullptr),
 	m_currentFrameId(1),
-	m_isScreenLocked(false) //初始化未锁屏
+	m_isScreenLocked(false)//初始化未锁屏
 {
 	// 配置定时器：单次触发
 	m_unlockTimer.setSingleShot(true);
@@ -45,7 +45,11 @@ void AppController::onASRTextReady(const QString& text, bool isFinal) {
 
 	if(m_isScreenLocked) {//渲染冲突上锁时
 		if(!isFinal) return;//屏幕锁定，语句未结束，丢弃新内容
-		// 屏幕锁定，语句完成，进入等待队列
+
+		if(m_pendingQueue.size() >= 2) {//控制队列规模
+			qDebug() << "[AppController] 队列拥堵，丢弃最老的句子";
+			m_pendingQueue.dequeue();
+		}
 		SubtitleFrame queuedFrame;
 		queuedFrame.frameId = m_currentFrameId++;//分配ID
 		queuedFrame.rawText = text;//设置未处理文本
@@ -69,14 +73,14 @@ void AppController::onASRTextReady(const QString& text, bool isFinal) {
 	emit subtitleReadyForRender(frame);//上屏信号
 
 	if(isFinal) {//送大模型处理并上锁
-		m_isScreenLocked = true; // 上锁，放置覆盖
-		m_currentFrameId++;//这个变量的使用是否有点草率
+		m_isScreenLocked = true; // 上锁，防止覆盖
 
 		if(m_llm && m_llmEnabled) {
 			m_llm->processText(frame);
 		} else {
 			onLLMTextProcessed(frame);
 		}
+		m_currentFrameId++;
 	}
 }
 

@@ -6,6 +6,7 @@
 #include <QScreen>
 #include <QGuiApplication>
 #include <QRect>
+#include <QTimer>
 
 #include "../core/AppController.h"
 
@@ -92,12 +93,15 @@ MainWindow::MainWindow(AppController* controller,QWidget* parent)
 	QSettings settings("MyStudio","Kotocord");
 	QString savedEncryptedKey = settings.value("API/DeepSeekKey","").toString();
 	QString plainKey = deobfuscateKey(savedEncryptedKey);
-	if(!plainKey.isEmpty()) {
-		ui->inputApiKey->setText(plainKey);
-		onSystemReady(true);
-	} else {
-		onSystemReady(false);
-	}
+	// 使用单次定时器将执行时机推迟到事件循环开始后，确保 main.cpp 已经完成了 connect
+	QTimer::singleShot(0,this,[this,plainKey]() {
+		if(!plainKey.isEmpty()) {
+			ui->inputApiKey->setText(plainKey); // 此时发射信号，外部一定能收到
+			onSystemReady(true);
+		} else {
+			onSystemReady(false);
+		}
+	});
 }
 
 MainWindow::~MainWindow()

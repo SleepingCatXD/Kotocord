@@ -1,4 +1,4 @@
-#include "DeepSeekAPIWorker.h"
+﻿#include "DeepSeekAPIWorker.h"
 #include <QNetworkRequest>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -68,19 +68,15 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
     QJsonDocument doc(payload);
     QByteArray postData = doc.toJson();
 
-    // 启动秒表，监控延迟
-    QElapsedTimer* timer = new QElapsedTimer();
-    timer->start();
+	// 使用时间戳，避免 new 带来的泄漏风险
+	qint64 startTimeMs = QDateTime::currentMSecsSinceEpoch();
 
-    QNetworkReply* reply = m_netManager->post(request, postData);
+	QNetworkReply* reply = m_netManager->post(request,postData);
+	SubtitleFrame localFrame = frame;// 在这里做一次非 const 的深拷贝
 
-    // 修复点：在这里做一次非 const 的深拷贝
-    SubtitleFrame localFrame = frame;
-
-    //修复点：捕获时只需要 [=] 即可，它会自动按值捕获 localFrame
+    //捕获时只需要 [=] 即可，它会自动按值捕获 localFrame
     connect(reply, &QNetworkReply::finished, this, [=]() mutable {
-        qint64 latency = timer->elapsed();
-        delete timer;
+		qint64 latency = QDateTime::currentMSecsSinceEpoch() - startTimeMs;
 
         if (reply->error() != QNetworkReply::NoError) {
             emit errorOccurred("API 请求失败: " + reply->errorString());
@@ -92,20 +88,20 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
         QJsonDocument responseDoc = QJsonDocument::fromJson(responseData);
         QJsonObject rootObj = responseDoc.object();
 
-        // 1. 提取大模型返回的正文
+        // 提取大模型返回的正文
         QJsonArray choices = rootObj["choices"].toArray();
         QString jsonStr = choices[0].toObject()["message"].toObject()["content"].toString();
 
-        // 核心修复：无情地扒掉 Markdown 的外衣！
+        // 去除markdown格式头
         jsonStr = jsonStr.replace("```json", "").replace("```", "").trimmed();
 
-        //新增监控：看看净化后的 JSON 和原始文本到底是什么！
+        //监控净化后的 JSON 和原始文本
         qDebug() << "[LLM] 净化后的JSON:" << jsonStr << "| 原始文本:" << localFrame.rawText;
 
-        // 2. 解析我们要求大模型吐出的 JSON
+        // 解析大模型产生的 JSON
         QJsonDocument innerDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
         if (innerDoc.isNull()) {
-            qDebug() << "[LLM 错误] JSON 解析依然失败！请检查模型到底返回了什么鬼东西。";
+            qDebug() << "[LLM 错误] JSON 解析依然失败！请检查模型返回内容。";
         }
         else {
             QString emotionStr = innerDoc.object()["emotion"].toString();
@@ -114,10 +110,10 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
 
         QString emotionStr = innerDoc.object()["emotion"].toString();
 
-        // 修复点：修改的是我们拷贝的 localFrame
+        // 修改拷贝的 localFrame
         localFrame.emotion = stringToEmotion(emotionStr);
 
-        // 3. 提取并报告 Token 消耗
+        // 提取并报告 Token 消耗
         QJsonObject usage = rootObj["usage"].toObject();
         int promptTokens = usage["prompt_tokens"].toInt();
         int completionTokens = usage["completion_tokens"].toInt();
@@ -133,5 +129,5 @@ void DeepSeekAPIWorker::processText(const SubtitleFrame& frame) {
         emit performanceMetricsReported(promptTokens, completionTokens, latency);
 
         reply->deleteLater();
-        });
+    });
 }

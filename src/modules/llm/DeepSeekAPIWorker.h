@@ -1,4 +1,4 @@
-#ifndef DEEPSEEKAPIWORKER_H
+﻿#ifndef DEEPSEEKAPIWORKER_H
 #define DEEPSEEKAPIWORKER_H
 
 #include "ILanguageModel.h"
@@ -11,7 +11,6 @@ public:
     explicit DeepSeekAPIWorker(QObject* parent = nullptr);
     ~DeepSeekAPIWorker() override;
 
-    // 留好接口：允许随时更改端点。
     // 如果你想用本地的 Ollama，只需改成 "http://localhost:11434/v1/chat/completions" 和对应的本地模型名即可！
     void setApiConfig(const QString& apiKey,
         const QString& apiUrl = "https://api.deepseek.com/chat/completions",
@@ -25,8 +24,7 @@ private:
     QString m_apiUrl;
     QString m_modelName;
 
-    // 构造发给大模型的系统级 Prompt
-    QString buildSystemPrompt() const;
+    QString buildSystemPrompt() const;// 构造发给大模型的系统级 Prompt
 };
 
 #endif // DEEPSEEKAPIWORKER_H

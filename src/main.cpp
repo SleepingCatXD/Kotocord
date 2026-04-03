@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 
 #include "ui/MainWindow.h"
+#include "utils/AppPaths.h"
 #include "core/AppController.h"
 #include "modules/input/VoskTranscriber.h"
 #include "modules/input/WhisperTranscriber.h"
@@ -38,7 +39,7 @@ int main(int argc, char* argv[]) {
 	// 第二步：依赖注入与初始配置 (初始化)
 	// ==========================================
 
-	kaomojiManager.loadFromFile(QDir(QCoreApplication::applicationDirPath()).filePath("../../resources/kaomoji.json"));
+	kaomojiManager.loadFromFile(AppPaths::getKaomojiPath());
 	controller.setKaomojiManager(&kaomojiManager);
 	controller.setLanguageModel(&mockLLM); // 默认使用 Mock LLM
 
@@ -109,7 +110,7 @@ int main(int argc, char* argv[]) {
 	});
 
 	// ==========================================
-	// 第四步：启动！
+	// 第四步：启动
 	// ==========================================
 	sysMonitor.start(1000);
 	window.show();

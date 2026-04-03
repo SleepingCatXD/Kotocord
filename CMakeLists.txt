@@ -26,6 +26,10 @@ find_package(Qt6 COMPONENTS Widgets Multimedia REQUIRED)
 # ==========================================
 # 2. 源码文件分类整理
 # ==========================================
+set(UTILS_SOURCES
+    src/utils/AppPaths.h
+)
+
 set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
@@ -78,10 +82,11 @@ set(MODULE_SOURCES
 # ==========================================
 # 3. 定义生成目标 (Executable)
 # ==========================================
-add_executable(${PROJECT_NAME} 
+ add_executable(${PROJECT_NAME} 
     ${CORE_SOURCES} 
     ${UI_SOURCES} 
     ${MODULE_SOURCES}
+    ${UTILS_SOURCES}
     #${RESOURCE_FILES}
 )
 

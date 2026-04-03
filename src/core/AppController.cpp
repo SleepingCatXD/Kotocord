@@ -22,10 +22,6 @@ void AppController::setLanguageModel(ILanguageModel* llm) {
     }
 }
 
-//void AppController::setRenderWidget(SubtitleRenderer* renderWidget) {
-//    m_renderWidget = renderWidget;
-//}
-
 void AppController::setLLMEnabled(bool enabled) {
     m_llmEnabled = enabled;
     qDebug() << "[AppController] LLM 润色状态变更为:" << (enabled ? "开启" : "关闭");
@@ -37,25 +33,9 @@ void AppController::setKaomojiManager(KaomojiManager* manager) {
 
 void AppController::onManualTextEntered(const QString& text) {
 	if(text.isEmpty()) return;
-
 	qDebug() << "[AppController] 收到手动输入:" << text;
 
-	//可添加锁机制
-
-	SubtitleFrame frame;
-	frame.frameId = m_currentFrameId++;
-	frame.rawText = text;
-	frame.displayText = text;
-	frame.isFinal = true;             // 定义初始状态为已完结
-	frame.isLlmProcessed = false;
-
-	emit subtitleReadyForRender(frame);//发射进行渲染信号
-
-	if(m_llm && m_llmEnabled) {//这里的判断逻辑是服务于什么功能的？
-		m_llm->processText(frame);
-	} else {
-		onLLMTextProcessed(frame);
-	}
+	onASRTextReady(text,true);//手动输入接入统一的处理管道
 }
 
 void AppController::onASRTextReady(const QString& text, bool isFinal) {
@@ -79,7 +59,6 @@ void AppController::onASRTextReady(const QString& text, bool isFinal) {
 
 	// 正常无锁状态
 	//qDebug() << "[AppController - ASR入口] 收到文本:" << text << "| 是否完结(isFinal):" << isFinal;
-
 	SubtitleFrame frame;
 	frame.frameId = m_currentFrameId;
 	frame.rawText = text;
@@ -91,13 +70,13 @@ void AppController::onASRTextReady(const QString& text, bool isFinal) {
 
 	if(isFinal) {//送大模型处理并上锁
 		m_isScreenLocked = true; // 上锁，放置覆盖
+		m_currentFrameId++;//这个变量的使用是否有点草率
 
 		if(m_llm && m_llmEnabled) {
 			m_llm->processText(frame);
 		} else {
 			onLLMTextProcessed(frame);
 		}
-		m_currentFrameId++;//这个变量的使用是否有点草率
 	}
 }
 
@@ -111,13 +90,10 @@ void AppController::onLLMTextProcessed(const SubtitleFrame& frame) {
 	} else {
 		finalFrame.displayText = finalFrame.rawText;
 	}
-
 	//qDebug() << "[AppController] 附魔完成，准备刷新屏幕:" << finalFrame.displayText;
-
 	emit subtitleReadyForRender(finalFrame);//发射渲染信号
 	m_unlockTimer.start(1500);//保留文本时间为1.5秒，再处理下一句
 }
-
 
 void AppController::processNextInQueue() {// 定时器触发的提货函数
 	m_isScreenLocked = false; // 解锁屏幕

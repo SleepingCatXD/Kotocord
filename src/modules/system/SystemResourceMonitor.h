@@ -25,12 +25,12 @@ private slots:
 private:
 	QTimer m_timer;
 
-	#ifdef Q_OS_WIN
+#ifdef Q_OS_WIN
 	int m_numProcessors;
 	ULARGE_INTEGER m_lastCpu;
 	ULARGE_INTEGER m_lastSysCpu;
 	ULARGE_INTEGER m_lastUserCpu;
-	#endif
+#endif
 };
 
 #endif // SYSTEMRESOURCEMONITOR_H

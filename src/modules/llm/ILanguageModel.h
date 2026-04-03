@@ -1,5 +1,4 @@
-﻿//LLM 纯虚类接口 (定义 processText(QString))
-#ifndef ILANGUAGEMODEL_H
+﻿#ifndef ILANGUAGEMODEL_H
 #define ILANGUAGEMODEL_H
 
 #include <QObject>
@@ -17,7 +16,7 @@ signals:
     // 处理完成后，发出包含情绪和新文本的完整 Frame
     void textProcessed(const SubtitleFrame& processedFrame);
 
-    // 新增：性能与资源监控信号 (提示词Token, 生成Token, API耗时毫秒)
+    // 性能与资源监控信号 (提示词Token, 生成Token, API耗时毫秒)
     void performanceMetricsReported(int promptTokens, int completionTokens, qint64 latencyMs);
 
     //网络错误信息

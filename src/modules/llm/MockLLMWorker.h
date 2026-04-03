@@ -1,4 +1,4 @@
-#ifndef MOCKLLMWORKER_H
+﻿#ifndef MOCKLLMWORKER_H
 #define MOCKLLMWORKER_H
 
 #include "ILanguageModel.h"
@@ -10,8 +10,7 @@ public:
     explicit MockLLMWorker(QObject* parent = nullptr);
     ~MockLLMWorker() override = default;
 
-    // 实现接口：处理文本
-    void processText(const SubtitleFrame& frame) override;
+    void processText(const SubtitleFrame& frame) override;// 实现接口：处理文本
 };
 
 #endif // MOCKLLMWORKER_H

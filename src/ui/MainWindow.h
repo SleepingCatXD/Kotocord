@@ -3,13 +3,9 @@
 
 #include <QMainWindow>
 #include "../modules/render/SubtitleRenderer.h"
-//#include "../modules/input/VoskTranscriber.h"
-//#include "../modules/input/WhisperTranscriber.h"
 #include "../core/DataTypes.h"
 
 class AppController;
-//class MockLLMWorker;
-//class DeepSeekAPIWorker;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

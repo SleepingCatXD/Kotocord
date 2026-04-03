@@ -2,8 +2,7 @@
 #include <QDebug>
 
 AudioFileSimulator::AudioFileSimulator(QObject* parent) : QObject(parent) {
-    // 设置定时器，每 100 毫秒触发一次 (模拟真实的音频缓冲延迟)
-    m_timer.setInterval(100);
+    m_timer.setInterval(100);// 设置定时器，每 100 毫秒触发一次 (模拟真实的音频缓冲延迟)
     connect(&m_timer, &QTimer::timeout, this, &AudioFileSimulator::readNextChunk);
 }
 
@@ -20,8 +19,7 @@ bool AudioFileSimulator::start(const QString& filePath) {
         return false;
     }
 
-    // 极其重要：跳过前 44 字节的 WAV 格式头！
-    // 因为 Vosk 只需要纯粹的 PCM 数据，如果把文件头也喂给它，它会识别出乱码。
+    // 跳过前 44 字节的 WAV 格式头：Vosk 只需要纯粹的 PCM 数据，防止识别乱码
     m_file.seek(44);
 
     m_timer.start();
@@ -47,7 +45,6 @@ void AudioFileSimulator::readNextChunk() {
 
     QByteArray chunk = m_file.read(CHUNK_SIZE);
 
-    // 检查每次到底读了多少字节出来
     //qDebug() << "[AudioSim] 成功读取一块音频，大小:" << chunk.size() << "bytes";
 
     if(chunk.size() > 0) {

@@ -12,14 +12,12 @@ public:
     explicit AudioFileSimulator(QObject* parent = nullptr);
     ~AudioFileSimulator();
 
-    // 传入你的 WAV 文件路径开始模拟
-    bool start(const QString& filePath);
+    bool start(const QString& filePath);// 传入WAV 文件路径开始模拟
     void stop();
 
 signals:
-    // 模拟麦克风，源源不断地吐出 PCM 数据
-    void audioDataReady(const QByteArray& data);
-    void finished(); // 文件读完了
+    void audioDataReady(const QByteArray& data);//PCM数据准备完成
+    void finished(); // 文件读取完毕
     void errorOccurred(const QString& errorMsg);
 
 private slots:

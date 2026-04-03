@@ -1,5 +1,4 @@
-﻿//定义subtitleFrame，进行文本流通
-#ifndef DATATYPES_H
+﻿#ifndef DATATYPES_H
 #define DATATYPES_H
 
 #include <QString>
@@ -14,7 +13,7 @@ enum class EmotionType {
     Surprise     // 惊讶
 };
 
-// 2. 提供字符串转枚举的工具函数 (兼容中文和英文，方便对接大模型)
+// 提供字符串转枚举的工具函数 (兼容中文和英文，方便对接大模型)
 inline EmotionType stringToEmotion(const QString& str) {
     if (str == "Joy" || str == "高兴") return EmotionType::Joy;
     if (str == "Sadness" || str == "悲伤") return EmotionType::Sadness;

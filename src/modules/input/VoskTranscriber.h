@@ -15,8 +15,8 @@ public:
     void stop() override;
 
 public slots:
-    void onAudioDataReady(const QByteArray& data); //接收声音PCM数据
-    void onAudioStreamFinished();//声音数据输入完成
+    void onAudioDataReady(const QByteArray& data) override; //接收声音PCM数据
+    void onAudioStreamFinished() override;//声音数据输入完成
 
 private:
     VoskModel* m_model;

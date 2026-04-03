@@ -7,8 +7,6 @@
 
 #include "DataTypes.h"
 #include "../modules/llm/ILanguageModel.h"
-//#include "../modules/render/SubtitleRenderer.h"
-//#include "../modules/input/IAudioTranscriber.h"
 #include "../modules/llm/KaomojiManager.h"
 
 class KaomojiManager;
@@ -19,7 +17,6 @@ public:
     explicit AppController(QObject* parent = nullptr);
 
     void setLanguageModel(ILanguageModel* llm);//依赖注入：选择LLM
-    //void setRenderWidget(SubtitleRenderer* renderWidget);
     void setLLMEnabled(bool enabled);
     void setKaomojiManager(KaomojiManager* manager);// 注入颜文字管理器的接口
 
@@ -35,8 +32,7 @@ private slots:
 	void processNextInQueue(); //处理队列中下一句话的槽函数
 
 private:
-    ILanguageModel* m_llm;
-    //SubtitleRenderer* m_renderWidget;
+	ILanguageModel* m_llm;
     bool m_llmEnabled; // 记录 LLM 开关状态
     KaomojiManager* m_kaomojiManager;
 	qint64 m_currentFrameId;

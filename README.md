@@ -10,7 +10,9 @@
 本项目使用 CMake 构建，底层依赖 `Vosk` 和 `Whisper.cpp` 作为本地语音识别引擎。为了简化环境配置，推荐的第三方库结构如下：
 
 ### 目录结构要求
-请在项目根目录下创建 `third_party` 文件夹，并严格按照以下结构放置头文件与动态/静态链接库（预编译的 Windows DLL/LIB 可以从它们的官方 Release 页面获取）：
+请在项目根目录下创建 `third_party` 文件夹，并严格按照以下结构放置头文件与动态/静态链接库（预编译的 Windows DLL/LIB Linux SO 可以从它们的官方 Release 页面获取）：
+[vosk仓库](https://github.com/alphacep/vosk-api)
+[whisper仓库](https://github.com/ggml-org/whisper.cpp)
 
 ```text
 third_party
@@ -30,7 +32,7 @@ third_party
 ### 模型文件准备
 
 * **Vosk 模型**：下载轻量级中文模型，解压至 `resources/model/vosk-model-small-cn/`。
-* **Whisper 模型**：下载 `ggml-small.bin`，放置于 `resources/model/` 目录下。
+* **Whisper 模型**：下载 [ggml-small.bin](https://huggingface.co/ggerganov/whisper.cpp/blob/main/ggml-small.bin)，放置于 `resources/model/` 目录下。
 
 ### 构建步骤
 确保已安装 Qt6 (含 Multimedia 组件) 与 CMake，随后执行标准 CMake 流程即可。构建完成后，脚本会自动将 `third_party` 中的 DLL 拷贝至 `bin/` 目录。
